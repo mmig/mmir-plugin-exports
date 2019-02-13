@@ -48,7 +48,8 @@ if(cli.flags.verbose){
 try {
 
   //createModuleIds: function(pluginPackageDir, outputFileName, alias, workersList, includeModulesList)
-	main.createModuleIds(cli.input[0], cli.flags.file);
+  var result = main.createModuleIds(cli.input[0], cli.flags.file);
+  console.log('  created file ' + result);
 
 } catch(err){
 
