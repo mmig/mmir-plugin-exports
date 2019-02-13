@@ -99,8 +99,10 @@ function renameBackupFile(file){
     ++count;
   }
   if(count < 100){
-    if(process.env.verbose) console.log('  exports-gen: renaming existing file '+path.basename(origFile)+' to '+path.basename(file));
-    fs.renameSync(origFile, file);
+    if(file !== origFile){
+      if(process.env.verbose) console.log('  exports-gen: renaming existing file '+path.basename(origFile)+' to '+path.basename(file));
+      fs.renameSync(origFile, file);
+    }
     return file;
   }
   throw new Error('Could not rename existing file: already too many backups ('+count+') for ' + origFile);
