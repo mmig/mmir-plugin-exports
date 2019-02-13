@@ -1,0 +1,27 @@
+{
+  "name": "mmir-plugin-exports",
+  "version": "1.0.0",
+  "description": "generate module-ids.js for mmir-plugins",
+  "main": "export-main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "pluginexport": "./bin/cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab-cos.b.dfki.de/mmir/mmir-plugin-exports.git"
+  },
+  "keywords": [
+    "mmir",
+    "plugin",
+    "metadata"
+  ],
+  "author": "russa",
+  "license": "MIT",
+  "dependencies": {
+    "meow": "^5.0.0",
+    "read-pkg-up": "^4.0.0"
+  }
+}
