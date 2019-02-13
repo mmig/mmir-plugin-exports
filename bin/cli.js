@@ -11,8 +11,11 @@ var cli = meow(`
     ${appName} <directory path>
 
   Options
-    --file, -f  the name of generated file
-                DEFAULT: ${gen.getDefaultFileName()}
+    --file, -f     the name of generated file
+                   DEFAULT: ${gen.getDefaultFileName()}
+    --help         show usage information
+    --verbose, -v  show additional information
+                   DEFAULT: false
 
   Examples
     ${appName} ~/mmir-plugin-encoder-core
@@ -23,6 +26,11 @@ var cli = meow(`
 			type: 'string',
 			alias: 'f',
 			default: gen.getDefaultFileName()
+		},
+    verbose: {
+			type: 'boolean',
+			alias: 'v',
+			default: false
 		}
 	}
 });
@@ -30,13 +38,27 @@ var cli = meow(`
 // console.log(cli);
 
 if(!cli.input || !cli.input[0]){
-	cli.showHelp();
-	return;
+  cli.input = [process.cwd()];
 }
-//createModuleIds: function(pluginPackageDir, packageRoot, alias, workersList, includeModulesList){
+
 try {
+
+  //createModuleIds: function(pluginPackageDir, outputFileName, alias, workersList, includeModulesList)
 	main.createModuleIds(cli.input[0], cli.flags.file);
+
 } catch(err){
-	console.error('An Error occurred: is the directory path correct?\n', err);
-	cli.showHelp();
+
+	console.error(`
+  An Error occurred for:
+    ${appName} ${cli.input.join(' ')} -f ${cli.flags.file}
+
+  Is the directory path correct?`);
+
+  if(cli.flags.verbose)
+    console.error('\n  ERROR Details:', err);
+  else
+    console.error('  (use flag --verbose for more details)');
+
+  console.error('\nHELP:');
+  cli.showHelp();
 }
