@@ -117,7 +117,7 @@ function getWorkerListFor(packageInfo, rootPath, list){
 
 	var str;
 	getFiles(srcDir).forEach(function(f){
-		str = toAliasId(f, pkgId);
+		str = toAliasId(f, pkgId + '/workers');
 		if(process.env.verbose) console.log('  export-utils: adding worker file ', str);//DEBUG
 		list.push(str);
 	});
