@@ -23,7 +23,7 @@ function addAlias(id, path, alias, packageId){
 	if(alias[id]){
 		console.log('ERROR['+packageId+'/webpack-alias-util]: ID "'+id+'" already exists ('+alias[id]+'), overwriting with new location: '+path);
 	}
-	console.log('export-utils: adding alias entry ', id, ' -> ', path);//DEBUG
+	if(process.env.verbose) console.log('  export-utils: adding alias entry ', id, ' -> ', path);//DEBUG
 	alias[id] = path;
 }
 
@@ -104,7 +104,7 @@ function getWorkerListFor(packageInfo, rootPath, list){
 
 	var pkgPath = path.dirname(packageInfo.path);
 
-	// console.log('export-utils: looking for workers in ', packageInfo.pkg.name, ' -> ', packageInfo.pkg.directories);//DEBUG
+	//if(process.env.verbose) console.log('  export-utils: looking for workers in ', packageInfo.pkg.name, ' -> ', packageInfo.pkg.directories);//DEBUG
 
 	var srcDir = packageInfo.pkg.directories[workersDirName];
 	if(!srcDir){
@@ -118,7 +118,7 @@ function getWorkerListFor(packageInfo, rootPath, list){
 	var str;
 	getFiles(srcDir).forEach(function(f){
 		str = toAliasId(f, pkgId);
-		console.log('export-utils: adding worker file ', str);//DEBUG
+		if(process.env.verbose) console.log('  export-utils: adding worker file ', str);//DEBUG
 		list.push(str);
 	});
 
@@ -142,7 +142,7 @@ function getIncludeModules(packageInfo, alias, rootPath, includeList){
 	}
 	var pkgPath = path.dirname(packageInfo.path);
 	var file = normalize(path.resolve(pkgPath, mainFile), rootPath);
-	console.log('export-utils: will add include-module for main ', mainFile, ': ['+id+'] -> ', file);//DEBUG
+	if(process.env.verbose) console.log('  export-utils: will add include-module for main ', mainFile, ': ['+id+'] -> ', file);//DEBUG
 
 	addAlias(id, file, alias, id);
 	includeList.push(id);
@@ -207,7 +207,7 @@ module.exports = {
 		var packageRoot = path.dirname(path.resolve(packageInfo.path));
 
 		var packageId = packageInfo.pkg.name;
-		// console.log('package info ('+packageRoot+'): ', packageInfo);
+		// if(process.env.verbose) console.log('  package info ('+packageRoot+'): ', packageInfo);
 		var deps = getDependencies(packageInfo);
 
 		getAliasFor(packageInfo, packageRoot, alias);

@@ -41,6 +41,10 @@ if(!cli.input || !cli.input[0]){
   cli.input = [process.cwd()];
 }
 
+if(cli.flags.verbose){
+  process.env.verbose = true;
+}
+
 try {
 
   //createModuleIds: function(pluginPackageDir, outputFileName, alias, workersList, includeModulesList)
