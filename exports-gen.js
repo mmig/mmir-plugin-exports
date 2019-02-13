@@ -1,6 +1,7 @@
 
 var fs = require('fs');
 var path = require('path');
+var pathParse = require('path-parse');
 
 const OUTPUT_FILE_NAME = 'module-ids.js';
 
@@ -87,10 +88,31 @@ function generateExportsCode(packageId, paths, workers, mainModules, dependencie
   return code;
 }
 
+function renameBackupFile(file){
+  var origFile = file;
+  var count = 1;
+  var fileInfo = pathParse(file);
+  if(process.env.verbose) console.log('  exports-gen: checking if file '+origFile+' already exists... ');
+  while(fs.existsSync(file) && count < 100){
+    file = path.resolve(fileInfo.dir, fileInfo.name + count + '.bak');
+    if(process.env.verbose) console.log('  exports-gen: checking if file '+path.basename(file)+' already exists...');
+    ++count;
+  }
+  if(count < 100){
+    if(process.env.verbose) console.log('  exports-gen: renaming existing file '+path.basename(origFile)+' to '+path.basename(file));
+    fs.renameSync(origFile, file);
+    return file;
+  }
+  throw new Error('Could not rename existing file: already too many backups ('+count+') for ' + origFile);
+}
+
 function storeExports(dir, code, fileName){
   fileName = fileName || OUTPUT_FILE_NAME;
   var file = path.resolve(dir, fileName);
+  renameBackupFile(file);
   fs.writeFileSync(file, code);
+  if(process.env.verbose) console.log('  exports-gen: created file '+file+'.');
+  return file;
 }
 
 module.exports = {

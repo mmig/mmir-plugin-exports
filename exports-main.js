@@ -196,6 +196,7 @@ module.exports = {
 	 * 																	if given, the workers for the plugin-package will be added to it; if omitted a new list will be created internally
 	 * @param  {Array} [includeModulesList]  OPTIONAL (positional argument)
 	 * 																	     if given, the exported/entry-point modules for the plugin-package will be added to it; if omitted a new list will be created internally
+	 * @returns {String} the file path to which the module information for pluginPackageDir were written to
 	 */
 	createModuleIds: function(pluginPackageDir, outputFileName, alias, workersList, includeModulesList){
 
@@ -220,6 +221,6 @@ module.exports = {
 		getIncludeModules(packageInfo, alias, packageRoot, includeModulesList);
 
 		var code = exportsGen.generateCode(packageId, alias, workersList, includeModulesList, deps.map(function(d){return d.pkg.name}));
-		exportsGen.writeToFile(packageRoot, code, outputFileName);
+		return exportsGen.writeToFile(packageRoot, code, outputFileName);
 	}
 };
