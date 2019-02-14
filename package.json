@@ -24,5 +24,10 @@
     "meow": "^5.0.0",
     "path-parse": "^1.0.6",
     "read-pkg-up": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/meow": "^5.0.0",
+    "@types/path-parse": "^1.0.19",
+    "@types/read-pkg-up": "^3.0.1"
   }
 }

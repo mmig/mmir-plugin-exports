@@ -37,7 +37,7 @@ function toAliasId(file, packageId){
 
 function addAliasForFiles(files, pid, alias, basePath, rootPath){
 
-	var id, temp, file;//,name;
+	var id, file;//, temp, name;
 	files.forEach(function(f){
 		file = path.resolve(basePath, f);
 		if(fs.lstatSync(file).isDirectory()){
