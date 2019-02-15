@@ -16,12 +16,12 @@ var cli = meow(`
 
   Options
     --file, -f     the name of generated module IDs file
-                   DEFAULT: ${gen.getDefaultFileName()}
-   --cfile, -c    the name of generated module config file
-                  DEFAULT: ${genc.getDefaultFileName()}
+                    DEFAULT: ${gen.getDefaultFileName()}
+    --cfile, -c    the name of generated module config file
+                    DEFAULT: ${genc.getDefaultFileName()}
     --help         show usage information
     --verbose, -v  show additional information
-                   DEFAULT: false
+                    DEFAULT: false
 
   Examples
     ${appName} ~/mmir-plugin-encoder-core
