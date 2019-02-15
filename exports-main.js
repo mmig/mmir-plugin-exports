@@ -284,11 +284,11 @@ module.exports = {
 		return getIncludeModules(packageInfo, packageRoot, alias);
 	},
 	/**
-	 * creates the module-ids.js file at pluginPackageDir
+	 * creates the module-ids.gen.js file at pluginPackageDir
 	 *
 	 * @param  {String} pluginPackageDir the path to the package directory of the mmir-plugin (can also be a sub-path of the target package)
 	 * @param  {String} [outputFileName]  OPTIONAL (positional argument) the file-name of the module-ids module that will be created in pluginPackageDir
-	 * 																	  DEFAULT: "module-ids.js"
+	 * 																	  DEFAULT: "module-ids.gen.js"
 	 * @param  {Object} [alias] OPTIONAL (positional argument) mapping for module IDs to file-path of its JS file, {[moduleId: string]: path}
 	 * 																	 if given, the mappings for the plugin-package will be added to it; if omitted a new mapping will be created internally
 	 * @param  {Array} [workersList]  OPTIONAL (positional argument) a list for workers

@@ -2,7 +2,7 @@
 var path = require('path');
 var fs = require('fs');
 
-var moduleIds = require('./module-ids.js');
+var moduleIds = require('./module-ids.gen.js');
 
 ['paths', 'workers', 'modules', 'dependencies'].forEach(function(type){
   console.log(type + ': ', moduleIds.getAll(type));

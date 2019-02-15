@@ -1,7 +1,7 @@
 {
   "name": "mmir-plugin-exports",
   "version": "1.0.0",
-  "description": "generate module-ids.js for mmir-plugins",
+  "description": "generate module-ids.gen.js and module-cofig.gen.js for mmir-plugins",
   "main": "export-main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
