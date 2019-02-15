@@ -141,7 +141,7 @@ function getAliasFor(packageInfo, rootPath, alias){
 		}
 		resolvePaths(pkgPath, srcDirs, true);
 		srcDirs.forEach(function(srcDir){
-			var isWorker = !workersDirs || workersDirs.findIndex(function(wpath){ return srcDir.indexOf(wpath) === 0; }) !== -1;
+			var isWorker = workersDirs && workersDirs.findIndex(function(wpath){ return srcDir.indexOf(wpath) === 0; }) !== -1;
 			if(!isWorker){
 				addAliasForFiles(getFiles(srcDir), id, alias, srcDir, rootPath);
 			}
