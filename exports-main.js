@@ -125,21 +125,16 @@ function getAliasFor(packageInfo, rootPath, alias){
 	var id = packageInfo.pkg.name;
 	var pkgPath = path.dirname(packageInfo.path);
 
-	var workersDirs = packageInfo.pkg.mmir[workersFieldName];
-	// var resolvedWorkers = [];
+	var workersDirs = packageInfo.pkg.mmir && packageInfo.pkg.mmir[workersFieldName];
 	if(workersDirs){
 		if(!Array.isArray(workersDirs)){
 			workersDirs = [workersDirs];
 		}
 
 		resolvePaths(pkgPath, workersDirs, false);
-		// workersDirs.forEach(function(dir){
-		// 	resolvedWorkers.push(path.resolve(pkgPath, dir));
-		// });
-
 	}
 
-	var srcDirs = packageInfo.pkg.directories[srcDirName];
+	var srcDirs = packageInfo.pkg.directories && packageInfo.pkg.directories[srcDirName];
 	if(srcDirs){
 		if(!Array.isArray(srcDirs)){
 			srcDirs = [srcDirs];
@@ -178,7 +173,7 @@ function getWorkerListFor(packageInfo, rootPath, list){
 
 	//if(process.env.verbose) console.log('  export-utils: looking for workers in ', packageInfo.pkg.name, ' -> ', packageInfo.pkg.directories);//DEBUG
 
-	var srcDirs = packageInfo.pkg.mmir[workersFieldName];
+	var srcDirs = packageInfo.pkg.mmir && packageInfo.pkg.mmir[workersFieldName];
 	if(!srcDirs){
 		return list;
 	} else if(!Array.isArray(srcDirs)){
@@ -225,7 +220,7 @@ function getIncludeModules(packageInfo, alias, rootPath, includeList){
 	includeList.push(id);
 
 	//additional exports:
-	var exportsDirs = packageInfo.pkg.mmir[exportsFieldName];
+	var exportsDirs = packageInfo.pkg.mmir && packageInfo.pkg.mmir[exportsFieldName];
 	if(exportsDirs){
 		if(!Array.isArray(exportsDirs)){
 			exportsDirs = [exportsDirs];
