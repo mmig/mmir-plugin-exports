@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 
 var meow = require('meow');
+
 var gen = require('../exports-gen.js');
+var genc = require('../config-gen.js');
+
 var main = require('../exports-main.js');
+var mainc = require('../config-main.js');
 
 var appName = 'pluginexport';
 
@@ -11,8 +15,10 @@ var cli = meow(`
     ${appName} <directory path>
 
   Options
-    --file, -f     the name of generated file
+    --file, -f     the name of generated module IDs file
                    DEFAULT: ${gen.getDefaultFileName()}
+   --cfile, -c    the name of generated module config file
+                  DEFAULT: ${genc.getDefaultFileName()}
     --help         show usage information
     --verbose, -v  show additional information
                    DEFAULT: false
@@ -26,6 +32,11 @@ var cli = meow(`
 			type: 'string',
 			alias: 'f',
 			default: gen.getDefaultFileName()
+		},
+		cfile: {
+			type: 'string',
+			alias: 'c',
+			default: genc.getDefaultFileName()
 		},
     verbose: {
 			type: 'boolean',
@@ -49,6 +60,9 @@ try {
 
   //createModuleIds: function(pluginPackageDir, outputFileName, alias, workersList, includeModulesList)
   var result = main.createModuleIds(cli.input[0], cli.flags.file);
+  console.log('  created file ' + result);
+
+  result = mainc.createModuleConfigs(cli.input[0], cli.flags.cfile);
   console.log('  created file ' + result);
 
 } catch(err){

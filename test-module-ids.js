@@ -17,3 +17,7 @@ var moduleIds = require('./module-ids.js');
   }
   console.log('###############################\n');
 })
+
+//FIXME TEST
+var text = require('./config-main.js').createModuleConfigs('C:/Users/aaru01/git/dev_mmir-media-plugins/mmir-plugin-encoder-core');
+console.log(require('./config-gen.js').generateCode(text));
