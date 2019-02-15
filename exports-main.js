@@ -4,11 +4,15 @@ var path = require('path');
 
 var readPackage = require('read-pkg-up');
 
+var fileUtils = require('./file-utils.js');
+
 //default sub-dir name (in directories entry) for whichs' files alias entries will be created
 var srcDirName = 'lib';
 
-//default sub-dir name (in directories entry) for whichs' files alias entries will be created
-var workersDirName = 'webworker';
+//default entry name (in mmir entry) whichs' files will be treated as WebWorkers
+var workersFieldName = 'workers';
+//default entry name (in mmir entry) whichs' files will be treated as exported modules
+var exportsFieldName = 'exports';
 
 var reNormalize = path.sep === '/'? null : /\\/g;
 
@@ -27,7 +31,20 @@ function addAlias(id, path, alias, packageId){
 	alias[id] = path;
 }
 
+function getAliasEntry(path, alias){
+	var existingId;
+	Object.keys(alias).forEach(function(id){
+		if(alias[id] === path){
+			existingId = !existingId || existingId.length > id.length? id : existingId;
+		}
+	});
+	return existingId;
+}
+
 function getFiles(dirPath){
+	if(!fileUtils.isDirectory(dirPath)){
+		return [path.resolve(dirPath)];
+	}
 	return fs.readdirSync(path.resolve(dirPath));
 }
 
@@ -40,7 +57,7 @@ function addAliasForFiles(files, pid, alias, basePath, rootPath){
 	var id, file;//, temp, name;
 	files.forEach(function(f){
 		file = path.resolve(basePath, f);
-		if(fs.lstatSync(file).isDirectory()){
+		if(fileUtils.isDirectory(file)){
 			return;
 		}
 		// name = path.basename(f);
@@ -57,6 +74,38 @@ function addAliasForFiles(files, pid, alias, basePath, rootPath){
 
 	return alias;
 };
+
+function getSubDirs(resolvedDir, subdirList){
+
+	subdirList = subdirList || [];
+
+	var files = fs.readdirSync(resolvedDir);
+	files.forEach(function(file){
+		var subDir = path.resolve(resolvedDir, file);
+		if(fileUtils.isDirectory(subDir)){
+			subdirList.push(subDir);
+			getSubDirs(subDir, subdirList);
+		}
+	});
+	return subdirList;
+}
+
+function resolvePaths(root, dirList, recursively){
+
+	dirList.forEach(function(dir, index){
+		dirList[index] = path.resolve(root, dir);
+	});
+
+	if(recursively){
+		var subDirs = [];
+		dirList.forEach(function(dir){
+			getSubDirs(dir, subDirs);
+		});
+		subDirs.forEach(function(d){
+			dirList.push(d);
+		});
+	}
+}
 
 function getPackageInfo(forPackageDir){
 	return readPackage.sync({cwd: forPackageDir});
@@ -76,16 +125,39 @@ function getAliasFor(packageInfo, rootPath, alias){
 	var id = packageInfo.pkg.name;
 	var pkgPath = path.dirname(packageInfo.path);
 
-	var srcDir = packageInfo.pkg.directories[srcDirName];
-	if(srcDir){
-		srcDir = path.resolve(pkgPath, srcDir);
-		addAliasForFiles(getFiles(srcDir), id, alias, srcDir, rootPath);
+	var workersDirs = packageInfo.pkg.mmir[workersFieldName];
+	// var resolvedWorkers = [];
+	if(workersDirs){
+		if(!Array.isArray(workersDirs)){
+			workersDirs = [workersDirs];
+		}
+
+		resolvePaths(pkgPath, workersDirs, false);
+		// workersDirs.forEach(function(dir){
+		// 	resolvedWorkers.push(path.resolve(pkgPath, dir));
+		// });
+
 	}
 
-	var workersDir = packageInfo.pkg.directories[workersDirName];
-	if(workersDir){
-		workersDir = path.resolve(pkgPath, workersDir)
-		addAliasForFiles(getFiles(workersDir), id + '/workers', alias, workersDir, rootPath);
+	var srcDirs = packageInfo.pkg.directories[srcDirName];
+	if(srcDirs){
+		if(!Array.isArray(srcDirs)){
+			srcDirs = [srcDirs];
+		}
+		resolvePaths(pkgPath, srcDirs, true);
+		srcDirs.forEach(function(srcDir){
+			var isWorker = !workersDirs || workersDirs.findIndex(function(wpath){ return srcDir.indexOf(wpath) === 0; }) !== -1;
+			if(!isWorker){
+				addAliasForFiles(getFiles(srcDir), id, alias, srcDir, rootPath);
+			}
+		});
+	}
+
+
+	if(workersDirs){
+		workersDirs.forEach(function(workersDir){
+			addAliasForFiles(getFiles(workersDir), id + '/workers', alias, workersDir, rootPath);
+		});
 	}
 
 	return alias;
@@ -106,20 +178,25 @@ function getWorkerListFor(packageInfo, rootPath, list){
 
 	//if(process.env.verbose) console.log('  export-utils: looking for workers in ', packageInfo.pkg.name, ' -> ', packageInfo.pkg.directories);//DEBUG
 
-	var srcDir = packageInfo.pkg.directories[workersDirName];
-	if(!srcDir){
+	var srcDirs = packageInfo.pkg.mmir[workersFieldName];
+	if(!srcDirs){
 		return list;
+	} else if(!Array.isArray(srcDirs)){
+		srcDirs = [srcDirs];
 	}
 
 
 	var pkgId = packageInfo.pkg.name;
-	srcDir = path.resolve(pkgPath, srcDir);
+	srcDirs.forEach(function(srcDir){
 
-	var str;
-	getFiles(srcDir).forEach(function(f){
-		str = toAliasId(f, pkgId + '/workers');
-		if(process.env.verbose) console.log('  export-utils: adding worker file ', str);//DEBUG
-		list.push(str);
+		srcDir = path.resolve(pkgPath, srcDir);
+		var str;
+		getFiles(srcDir).forEach(function(f){
+			str = toAliasId(f, pkgId + '/workers');
+			if(process.env.verbose) console.log('  export-utils: adding worker file ', str);//DEBUG
+			list.push(str);
+		});
+
 	});
 
 	return list;
@@ -146,6 +223,33 @@ function getIncludeModules(packageInfo, alias, rootPath, includeList){
 
 	addAlias(id, file, alias, id);
 	includeList.push(id);
+
+	//additional exports:
+	var exportsDirs = packageInfo.pkg.mmir[exportsFieldName];
+	if(exportsDirs){
+		if(!Array.isArray(exportsDirs)){
+			exportsDirs = [exportsDirs];
+		}
+		resolvePaths(pkgPath, exportsDirs, false);
+		exportsDirs.forEach(function(expDir){
+
+			getFiles(expDir).forEach(function(file){
+
+				file = normalize(file, rootPath);
+				var eid = getAliasEntry(file, alias);
+				if(!eid){
+					eid = id + '/' + path.basename(file, '.js');
+					addAlias(eid, file, alias, id);
+				}
+
+				if(includeList.findIndex(function(entry){ return entry === eid;}) === -1){
+					if(process.env.verbose) console.log('  export-utils: will add include-module for : ['+eid+'] -> ', file);//DEBUG
+					includeList.push(eid);
+				}
+			});
+
+		});
+	}
 
 	return includeList;
 }

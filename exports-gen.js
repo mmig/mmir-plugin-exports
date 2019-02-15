@@ -1,9 +1,7 @@
 
-var fs = require('fs');
-var path = require('path');
-var pathParse = require('path-parse');
+var fileUtils = require('./file-utils.js');
 
-const OUTPUT_FILE_NAME = 'module-ids.js';
+const OUTPUT_FILE_NAME = 'module-ids.gen.js';
 
 /**
  * HELPER adds all entries from source to target, if it is not already contained
@@ -59,7 +57,9 @@ var _getAllTemplate = function _getAll(type, isResolve){
 
 function generateExportsCode(packageId, paths, workers, mainModules, dependencies){
 
-  var code = 'var _id = ';
+  var code = fileUtils.fileHeader;
+
+  code += 'var _id = ';
 
   code += JSON.stringify(packageId) + ';\n';
 
@@ -88,33 +88,9 @@ function generateExportsCode(packageId, paths, workers, mainModules, dependencie
   return code;
 }
 
-function renameBackupFile(file){
-  var origFile = file;
-  var count = 1;
-  var fileInfo = pathParse(file);
-  if(process.env.verbose) console.log('  exports-gen: checking if file '+origFile+' already exists... ');
-  while(fs.existsSync(file) && count < 100){
-    file = path.resolve(fileInfo.dir, fileInfo.name + count + '.bak');
-    if(process.env.verbose) console.log('  exports-gen: checking if file '+path.basename(file)+' already exists...');
-    ++count;
-  }
-  if(count < 100){
-    if(file !== origFile){
-      if(process.env.verbose) console.log('  exports-gen: renaming existing file '+path.basename(origFile)+' to '+path.basename(file));
-      fs.renameSync(origFile, file);
-    }
-    return file;
-  }
-  throw new Error('Could not rename existing file: already too many backups ('+count+') for ' + origFile);
-}
-
 function storeExports(dir, code, fileName){
   fileName = fileName || OUTPUT_FILE_NAME;
-  var file = path.resolve(dir, fileName);
-  renameBackupFile(file);
-  fs.writeFileSync(file, code);
-  if(process.env.verbose) console.log('  exports-gen: created file '+file+'.');
-  return file;
+  return fileUtils.storeToFile(dir, code, fileName);
 }
 
 module.exports = {
