@@ -9,10 +9,14 @@ function reIndent(comment, indent){
 }
 
 function generateSubConfig(subConfig, indent){
+	var entryNames = Object.keys(subConfig);
+	if(entryNames.length < 1){
+		return '';
+	}
 	var indentStr = new Array(indent + 1).join(' ');
 	var code = '';
 	code += indentStr + 'subConfig: {\n';
-	Object.keys(subConfig).forEach(function(cname){
+	entryNames.forEach(function(cname){
 		var centry = subConfig[cname];
 		code += indentStr + '  '+cname+': {\n';
 		code += generateConfig(centry.config, centry.docs, indent + 4);
