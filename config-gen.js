@@ -77,15 +77,19 @@ function generateConfigsCode(configInfo){
 
   code += 'module.exports = {\n';
 
-  code += '  pluginName: ' + JSON.stringify(configInfo.pluginName) + ',\n';
+	if(configInfo.pluginName){
+  	code += '  pluginName: ' + JSON.stringify(configInfo.pluginName) + ',\n';
+	}
 
-	code += generateConfig(configInfo.config, configInfo.docs, 2);
+	if(configInfo.config && configInfo.config.length > 0){
+		code += generateConfig(configInfo.config, configInfo.docs, 2);
+	}
 
   if(configInfo.subConfig){
     code += generateSubConfig(configInfo.subConfig, 2);
   }
 
-  if(configInfo.enums.length > 0){
+  if(configInfo.enums && configInfo.enums.length > 0){
     configInfo.enums.forEach(function(enm){
 			if(enm.doc){
 				code += reIndent(enm.doc, 2) + '\n';

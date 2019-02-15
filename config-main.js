@@ -154,23 +154,35 @@ function createConfigInfo(ast){
   var interfaces = toMap(allInterfaces);
   interfaces.delete(mainInterfaceKey);
   var mainConfig = allInterfaces[mainInterfaceKey];
-  var mainConfigEntry = getFirstProperty(mainConfig);
+  var mainConfigEntry;
+  if(mainConfig){
+    mainConfigEntry = getFirstProperty(mainConfig);
+  } else if(process.env.verbose) console.log('  export-utils: could not find main interface definition in ', ast.getSourceFile().fileName);//DEBUG
 
   var configInfo = {};
-  configInfo.pluginName = mainConfigEntry.name.getText();
 
-  var mainConfigInterface = allInterfaces[mainConfigEntry.type.getText()];
-  interfaces.delete(mainConfigInterface.name.getText());
-  var subConfig = {};
-  configInfo.docs = [];
-  configInfo.config = getPropertyList(mainConfigInterface).map(function(prop){
-    if(allInterfaces[prop.type.getText()]){
-      processSubConfig(prop, subConfig, interfaces, allInterfaces)
-      // subConfig.push({name: prop.name.getText(), type: prop.type.getText(), doc: getDoc(prop)});
-    }
-    configInfo.docs.push(getDoc(prop));
-    return prop.name.getText();
-  });
+  if(mainConfigEntry){
+
+    configInfo.pluginName = mainConfigEntry.name.getText();
+
+    var mainConfigInterface = allInterfaces[mainConfigEntry.type.getText()];
+
+    if(mainConfigInterface){
+      interfaces.delete(mainConfigInterface.name.getText());
+      var subConfig = {};
+      configInfo.docs = [];
+      configInfo.config = getPropertyList(mainConfigInterface).map(function(prop){
+        if(allInterfaces[prop.type.getText()]){
+          processSubConfig(prop, subConfig, interfaces, allInterfaces)
+          // subConfig.push({name: prop.name.getText(), type: prop.type.getText(), doc: getDoc(prop)});
+        }
+        configInfo.docs.push(getDoc(prop));
+        return prop.name.getText();
+      });
+
+    } else if(process.env.verbose) console.log('  export-utils: could not find main config definition in ', ast.getSourceFile().fileName);//DEBUG
+
+  } else if(process.env.verbose) console.log('  export-utils: cannot set plugin-name for main config entry... ');//DEBUG
 
   var enums = [];
   configInfo.enums = enums;
@@ -205,7 +217,7 @@ module.exports = {
     moduleConfigDFile = moduleConfigDFile || MODULE_CONFIG_INTERFACE_FILE;
 
     var ast = parseFile(packageRootDir, moduleConfigDFile);
-    var configInfo = createConfigInfo(ast);
+    var configInfo = createConfigInfo(ast, moduleConfigDFile);
 
     var code = configCodeUtil.generateCode(configInfo);
     return configCodeUtil.writeToFile(packageRootDir, code, outputFileName);
