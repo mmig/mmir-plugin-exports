@@ -49,7 +49,8 @@ var cli = meow(`
 // console.log(cli);
 
 if(!cli.input || !cli.input[0]){
-  cli.input = [process.cwd()];
+  cli.showHelp();
+  return;
 }
 
 if(cli.flags.verbose){
@@ -69,7 +70,7 @@ try {
 
 	console.error(`
   An Error occurred for:
-    ${appName} ${cli.input.join(' ')} -f ${cli.flags.file}
+    ${appName} ${cli.input.join(' ')} -f ${cli.flags.file} -c ${cli.flags.cfile}
 
   Is the directory path correct?`);
 
