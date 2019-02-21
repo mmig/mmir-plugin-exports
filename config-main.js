@@ -7,9 +7,11 @@ const configCodeUtil = require('./config-gen.js');
 
 const MODULE_CONFIG_INTERFACE_FILE = 'config.d.ts';
 
-const reMainConfigInterface = /ConfigEntry$/;
-const reConfigInterface = /Config$/;
+const reMainConfigInterface = /PluginConfig$/;
+const reSpeechConfigInterface = /PluginSpeechConfigEntry$/;
+const reConfigInterface = /PluginConfigEntry$/;
 const mainInterfaceKey = '_main';
+const speechInterfaceKey = '_speech';
 
 const PropertyKind = 'PropertySignature';
 const InterfaceKind = 'InterfaceDeclaration';
@@ -27,10 +29,12 @@ function getInterfaces(sourceFile){
   ts.forEachChild(sourceFile, function(node){
     if(getKind(node) === InterfaceKind){
       name = node.name.getText();
-      if(reConfigInterface.test(name)){
-        interfaces[name] = node;
-      } else if(reMainConfigInterface.test(name)){
+      if(reMainConfigInterface.test(name)){
         interfaces[mainInterfaceKey] = node;
+      } else if(reSpeechConfigInterface.test(name)){
+        interfaces[speechInterfaceKey] = node;
+      } else if(reConfigInterface.test(name)){
+        interfaces[name] = node;
       }
     }
   });
@@ -156,6 +160,7 @@ function createConfigInfo(ast){
   var mainConfig = allInterfaces[mainInterfaceKey];
   var mainConfigEntry;
   if(mainConfig){
+    interfaces.delete(mainInterfaceKey);
     mainConfigEntry = getFirstProperty(mainConfig);
   } else if(process.env.verbose) console.log('  export-utils: could not find main interface definition in ', ast.getSourceFile().fileName);//DEBUG
 
@@ -181,6 +186,25 @@ function createConfigInfo(ast){
       });
 
     } else if(process.env.verbose) console.log('  export-utils: could not find main config definition in ', ast.getSourceFile().fileName);//DEBUG
+
+    var speechConfigInterface = allInterfaces[speechInterfaceKey];
+
+    if(speechConfigInterface){
+      interfaces.delete(speechInterfaceKey);
+      interfaces.delete(speechConfigInterface.name.getText());
+      var subConfig = {};
+      configInfo.speechDocs = [];
+      configInfo.speechConfig = getPropertyList(speechConfigInterface).map(function(prop){
+        if(allInterfaces[prop.type.getText()]){
+          processSubConfig(prop, subConfig, interfaces, allInterfaces)
+          // subConfig.push({name: prop.name.getText(), type: prop.type.getText(), doc: getDoc(prop)});
+        }
+        configInfo.speechDocs.push(getDoc(prop));
+        return prop.name.getText();
+      });
+
+    } else if(process.env.verbose) console.log('  export-utils: could not find speech config definition in ', ast.getSourceFile().fileName);//DEBUG
+
 
   } else if(process.env.verbose) console.log('  export-utils: cannot set plugin-name for main config entry... ');//DEBUG
 

@@ -26,10 +26,14 @@ parses the `package.json` of a plugin and
 running `pluginexport <dir>`
 
 parses the `config.d.ts` of a plugin and
- * exports the property (name) of `<name>ConfigEntry` interface as `pluginName`:  
-   `export interface ThePluginNameConfigEntry {...`
- * exports other interfaces (their properties) with suffix `Config` as config-property lists:  
-   `export interface AnotherNameConfig {...`
+ * exports the (single!) property (name) of `[.*]PluginConfig` interface as `pluginName`:  
+   `export interface SomeNamePluginConfig { <the plugin config name>: <the config entry type>; }`
+ * exports other interfaces (their properties) with suffix `PluginSpeechConfigEntry` as speechConfig-property lists:  
+   `export interface SomeNamePluginSpeechConfigEntry {...`
+   * NOTE should extend `mmir.SpeechConfigPluginEntry`
+ * exports other interfaces (their properties) with suffix `PluginConfigEntry` as config-property lists:  
+   `export interface AnotherNamePluginConfigEntry {...`
+   * NOTE should extend `mmir.MediaManagerPluginEntry`
  * exports enums as properties:  
    `export enum SomeName {...`
 

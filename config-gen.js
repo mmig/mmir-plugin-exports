@@ -31,11 +31,12 @@ function generateSubConfig(subConfig, indent){
 	return code;
 }
 
-function generateConfig(config, configDocs, indent){
+function generateConfig(config, configDocs, indent, isSpeechConfig){
 	var indentStr = new Array(indent + 1).join(' ');
+	var propName = isSpeechConfig? 'speechConfig' : 'config';
 
 	var code = '';
-	code += indentStr + 'config: [\n';
+	code += indentStr + propName + ': [\n';
   config.forEach(function(c, index){
     var comment = configDocs[index];
     if(comment){
@@ -87,6 +88,10 @@ function generateConfigsCode(configInfo){
 
 	if(configInfo.config && configInfo.config.length > 0){
 		code += generateConfig(configInfo.config, configInfo.docs, 2);
+	}
+
+	if(configInfo.speechConfig && configInfo.speechConfig.length > 0){
+		code += generateConfig(configInfo.speechConfig, configInfo.speechDocs, 2, true);
 	}
 
   if(configInfo.subConfig){
