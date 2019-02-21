@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
-    "pluginexport": "./bin/cli.js"
+    "pluginexport": "./bin/cli.js",
+    "createplugincompat": "./bin/compat-cli.js"
   },
   "repository": {
     "type": "git",
@@ -21,12 +22,14 @@
   "author": "russa",
   "license": "MIT",
   "dependencies": {
+    "esprima": "^4.0.1",
     "meow": "^5.0.0",
     "path-parse": "^1.0.6",
     "read-pkg-up": "^4.0.0",
     "typescript": "^3.3.3"
   },
   "devDependencies": {
+    "@types/esprima": "^4.0.2",
     "@types/meow": "^5.0.0",
     "@types/path-parse": "^1.0.19",
     "@types/read-pkg-up": "^3.0.1"
