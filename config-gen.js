@@ -96,6 +96,7 @@ function generateConfigsCode(configInfo){
 	if(Array.isArray(configInfo.pluginName) && configInfo.plugins){
 
 		code += '  plugins: {\n';
+
 		configInfo.pluginName.forEach(function(subConfigName){
 
 
@@ -105,30 +106,17 @@ function generateConfigsCode(configInfo){
 		  	code += '      pluginName: ' + JSON.stringify(subConfigName) + ',\n';
 			}
 			code += doGenerateConfigsCode(subConfigInfo, 6);
+			code = code.replace(/,\n$/, '\n');
 			code += '    },\n';
 
 		});
+
+		code = code.replace(/,\n$/, '\n');
 		code += '  },\n';
 
 	} else {
 		code += doGenerateConfigsCode(configInfo, 2);
 	}
-
-	// if(configInfo.config && configInfo.config.length > 0){
-	// 	code += generateConfig(configInfo.config, configInfo.docs, 2);
-	// }
-	//
-	// if(configInfo.speechConfig && configInfo.speechConfig.length > 0){
-	// 	code += generateConfig(configInfo.speechConfig, configInfo.speechDocs, 2, true);
-	// }
-	//
-  // if(configInfo.subConfig){
-  //   code += generateSubConfig(configInfo.subConfig, 2);
-  // }
-	//
-	// if(configInfo.speechSubConfig){
-  //   code += generateSubConfig(configInfo.speechSubConfig, 2, 'speechSubConfig');
-  // }
 
   if(configInfo.enums && configInfo.enums.length > 0){
     configInfo.enums.forEach(function(enm){
