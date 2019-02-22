@@ -2,4 +2,4 @@
     var origInit = (function(){
       /*orig-define-content*/
     })();
-    origInit.apply(null, origArgs);
+    origInit.initialize.apply(null, origArgs);
