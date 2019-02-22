@@ -4,11 +4,11 @@ const fs = require('fs');
 const ts = require('typescript');
 
 //const code = "type EinType = string;\n\n/** ein KOmmentar\n mit zwei Zeilen */\ninterface EineKlasse{ \n/** ein kommentar für das feld */\nfeld: EinType; }"
-var file = 'C:/Users/aaru01/git/dev_mmir-media-plugins/mmir-plugin-encoder-core/config.d.ts';
+var file = 'C:/Users/aaru01/git/dev_mmir-media-plugins/mmir-plugin-tts-nuance-xhr/config.d.ts';
 var code = fs.readFileSync(file, 'utf8');
 const sc = ts.createSourceFile('x.ts', code, ts.ScriptTarget.Latest, true);
 
-const exportedTypes = new Set(['PropertySignature', 'InterfaceDeclaration', 'EnumDeclaration', 'EnumMember']);
+const exportedTypes = new Set(['PropertySignature', 'InterfaceDeclaration', 'EnumDeclaration', 'EnumMember', 'UnionType']);
 
 const text = sc.text;
 
