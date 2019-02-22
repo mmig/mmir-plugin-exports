@@ -8,14 +8,15 @@ function reIndent(comment, indent){
   return comment.trim().replace(/^\s*\/\*/, indentStr+'/*').replace(/(\r?\n)\s*\*/g, '$1' + indentStr+' *');
 }
 
-function generateSubConfig(subConfig, indent){
+function generateSubConfig(subConfig, indent, propName){
 	var entryNames = Object.keys(subConfig);
 	if(entryNames.length < 1){
 		return '';
 	}
 	var indentStr = new Array(indent + 1).join(' ');
 	var code = '';
-	code += indentStr + 'subConfig: {\n';
+	propName = propName || 'subConfig';
+	code += indentStr + propName + ': {\n';
 	entryNames.forEach(function(cname){
 		var centry = subConfig[cname];
 		code += indentStr + '  '+cname+': {\n';
@@ -55,15 +56,21 @@ function generateConfig(config, configDocs, indent, isSpeechConfig){
  * @param  {ConfigInfo} configInfo the config-info object:
  * 											{
  * 												//the plugin name (as used for configuration)
- * 												pluginName: string,
+ * 												pluginName: string | string[],
+ * 												//if pluginName is a list, contains the correspoing details for the plugins
+ * 												[plugins: {[pluginName: string]: ConfigInfo},]
  * 												//the (main) configuration field-names for the plugin
  * 												config: string[],
+ * 												//the (main) speech-configuration field-names for the plugin
+ * 												speechConfig: string[],
  * 												//the JS-docs for the configuration field-names (if there is any)
  * 												docs: string[],
  * 												// the exported enums (may be empty): additinonal/optional meta-data
  * 												enums: EnumInfo[],
  * 												// hierachical sub-configuration, if config is complex
  * 												[subConfig: SubConfig]
+ * 												// hierachical sub-speech-configuration, if speech-config is complex
+ * 												[speechSubConfig: SubConfig]
  * 											}
  * 											where:
  * 												EnumInfo: {name: string, doc: string, values: EnumValueInfo[]}
@@ -86,17 +93,42 @@ function generateConfigsCode(configInfo){
   	code += '  pluginName: ' + JSON.stringify(configInfo.pluginName) + ',\n';
 	}
 
-	if(configInfo.config && configInfo.config.length > 0){
-		code += generateConfig(configInfo.config, configInfo.docs, 2);
+	if(Array.isArray(configInfo.pluginName) && configInfo.plugins){
+
+		code += '  plugins: {\n';
+		configInfo.pluginName.forEach(function(subConfigName){
+
+
+			code += '    '+subConfigName+': {\n';
+			var subConfigInfo = configInfo.plugins[subConfigName];
+			if(subConfigInfo.pluginName){
+		  	code += '      pluginName: ' + JSON.stringify(subConfigName) + ',\n';
+			}
+			code += doGenerateConfigsCode(subConfigInfo, 6);
+			code += '    },\n';
+
+		});
+		code += '  },\n';
+
+	} else {
+		code += doGenerateConfigsCode(configInfo, 2);
 	}
 
-	if(configInfo.speechConfig && configInfo.speechConfig.length > 0){
-		code += generateConfig(configInfo.speechConfig, configInfo.speechDocs, 2, true);
-	}
-
-  if(configInfo.subConfig){
-    code += generateSubConfig(configInfo.subConfig, 2);
-  }
+	// if(configInfo.config && configInfo.config.length > 0){
+	// 	code += generateConfig(configInfo.config, configInfo.docs, 2);
+	// }
+	//
+	// if(configInfo.speechConfig && configInfo.speechConfig.length > 0){
+	// 	code += generateConfig(configInfo.speechConfig, configInfo.speechDocs, 2, true);
+	// }
+	//
+  // if(configInfo.subConfig){
+  //   code += generateSubConfig(configInfo.subConfig, 2);
+  // }
+	//
+	// if(configInfo.speechSubConfig){
+  //   code += generateSubConfig(configInfo.speechSubConfig, 2, 'speechSubConfig');
+  // }
 
   if(configInfo.enums && configInfo.enums.length > 0){
     configInfo.enums.forEach(function(enm){
@@ -118,6 +150,28 @@ function generateConfigsCode(configInfo){
 	code = code.replace(/,\n$/, '\n');
   code += '};\n';
   return code;
+}
+
+function doGenerateConfigsCode(configInfo, indent){
+
+	var code = '';
+	if(configInfo.config && configInfo.config.length > 0){
+		code += generateConfig(configInfo.config, configInfo.docs, indent);
+	}
+
+	if(configInfo.speechConfig && configInfo.speechConfig.length > 0){
+		code += generateConfig(configInfo.speechConfig, configInfo.speechDocs, indent, true);
+	}
+
+  if(configInfo.subConfig){
+    code += generateSubConfig(configInfo.subConfig, indent);
+  }
+
+	if(configInfo.speechSubConfig){
+    code += generateSubConfig(configInfo.speechSubConfig, indent, 'speechSubConfig');
+  }
+
+	return code;
 }
 
 function storeExports(dir, code, fileName){

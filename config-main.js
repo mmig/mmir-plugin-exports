@@ -11,12 +11,12 @@ const reMainConfigInterface = /PluginConfig$/;
 const reSpeechConfigInterface = /PluginSpeechConfigEntry$/;
 const reConfigInterface = /PluginConfigEntry$/;
 const mainInterfaceKey = '_main';
-const speechInterfaceKey = '_speech';
 
 const PropertyKind = 'PropertySignature';
 const InterfaceKind = 'InterfaceDeclaration';
 const EnumKind = 'EnumDeclaration';
 const EnumValueKind = 'EnumMember';
+const UnionTypeKind = 'UnionType';
 
 function getKind(node){
   return ts.SyntaxKind[node.kind];
@@ -30,10 +30,12 @@ function getInterfaces(sourceFile){
     if(getKind(node) === InterfaceKind){
       name = node.name.getText();
       if(reMainConfigInterface.test(name)){
-        interfaces[mainInterfaceKey] = node;
-      } else if(reSpeechConfigInterface.test(name)){
-        interfaces[speechInterfaceKey] = node;
-      } else if(reConfigInterface.test(name)){
+        if(!interfaces[mainInterfaceKey]){
+          interfaces[mainInterfaceKey] = [node];
+        } else {
+          interfaces[mainInterfaceKey].push(node);
+        }
+      } else if(reConfigInterface.test(name) || reSpeechConfigInterface.test(name)){
         interfaces[name] = node;
       }
     }
@@ -77,19 +79,6 @@ function getEnumValueList(node){
     }
   }
   return list;
-}
-
-function getFirstProperty(node){
-  /** @type {Array} */
-  var members = node.members;
-  var m;
-  for(var i = members.length - 1; i >= 0; --i){
-    m = members[i];
-    if(getKind(m) === PropertyKind){
-      return m;
-    }
-  }
-  return null;
 }
 
 function getDoc(node, indent){
@@ -152,25 +141,41 @@ function parseFile(dir, fileName){
   return ts.createSourceFile(fileName, code, ts.ScriptTarget.Latest, true);
 }
 
-function createConfigInfo(ast){
-
-  var allInterfaces = getInterfaces(ast);
-  var interfaces = toMap(allInterfaces);
-  interfaces.delete(mainInterfaceKey);
-  var mainConfig = allInterfaces[mainInterfaceKey];
-  var mainConfigEntry;
-  if(mainConfig){
-    interfaces.delete(mainInterfaceKey);
-    mainConfigEntry = getFirstProperty(mainConfig);
-  } else if(process.env.verbose) console.log('  export-utils: could not find main interface definition in ', ast.getSourceFile().fileName);//DEBUG
+function createConfigInfosFor(ast, mainConfigEntry, interfaces, allInterfaces){
 
   var configInfo = {};
 
+  var speechConfigInterface;
   if(mainConfigEntry){
 
     configInfo.pluginName = mainConfigEntry.name.getText();
+      // console.log('  export-utils: getting main-config entry ', mainConfigEntry.type.getText());//DEBUG
+    var mainConfigType = mainConfigEntry.type;
+    // console.log('  export-utils: processing main-config entry type ', mainConfigType.kind, ' -> ', mainConfigType);//DEBUG
+    var mainConfigTypeName, mainSpeechConfigTypeName;
+    if(getKind(mainConfigType) === UnionTypeKind){
+      mainConfigType.types.forEach(function(type){
+        var name = type.typeName.getText();
+        if(reConfigInterface.test(name)){
+          console.log('  export-utils: processing main-config entry types -> setting main-config type to ', type.typeName.getText());//DEBUG
+          mainConfigTypeName = name;
+        } else if(reSpeechConfigInterface.test(name)){
+          console.log('  export-utils: processing main-config entry types -> setting main-speechConfig type to ', type.typeName.getText());//DEBUG
+          mainSpeechConfigTypeName = name;
+        } else if(process.env.verbose) {
+          console.log('  export-utils: unknow type for main speech entry: expected type with <.*>PluginConfigEntry or <.*>PluginSpeechConfigEntry, but got ', name);
+        }
+      });
+    } else {
+      mainConfigTypeName = mainConfigType.getText();
+    }
 
-    var mainConfigInterface = allInterfaces[mainConfigEntry.type.getText()];
+    var mainConfigInterface = allInterfaces[mainConfigTypeName];
+
+    if(mainSpeechConfigTypeName){
+      speechConfigInterface = allInterfaces[mainSpeechConfigTypeName];
+      // console.log('  export-utils: using main-speechConfig ', mainSpeechConfigTypeName , ' -> ', speechConfigInterface);//DEBUG
+    }
 
     if(mainConfigInterface){
       interfaces.delete(mainConfigInterface.name.getText());
@@ -185,28 +190,64 @@ function createConfigInfo(ast){
         return prop.name.getText();
       });
 
-    } else if(process.env.verbose) console.log('  export-utils: could not find main config definition in ', ast.getSourceFile().fileName);//DEBUG
+      configInfo.subConfig = subConfig;
 
-    var speechConfigInterface = allInterfaces[speechInterfaceKey];
+    } else if(process.env.verbose) console.log('  export-utils: could not find main config definition for '+configInfo.pluginName+' in ', ast.getSourceFile().fileName);//DEBUG
 
     if(speechConfigInterface){
-      interfaces.delete(speechInterfaceKey);
       interfaces.delete(speechConfigInterface.name.getText());
-      var subConfig = {};
+      var speechSubConfig = {};
       configInfo.speechDocs = [];
       configInfo.speechConfig = getPropertyList(speechConfigInterface).map(function(prop){
         if(allInterfaces[prop.type.getText()]){
-          processSubConfig(prop, subConfig, interfaces, allInterfaces)
-          // subConfig.push({name: prop.name.getText(), type: prop.type.getText(), doc: getDoc(prop)});
+          processSubConfig(prop, speechSubConfig, interfaces, allInterfaces)
+          // speechSubConfig.push({name: prop.name.getText(), type: prop.type.getText(), doc: getDoc(prop)});
         }
         configInfo.speechDocs.push(getDoc(prop));
         return prop.name.getText();
       });
 
-    } else if(process.env.verbose) console.log('  export-utils: could not find speech config definition in ', ast.getSourceFile().fileName);//DEBUG
+      configInfo.speechSubConfig = speechSubConfig;
+
+    } else if(process.env.verbose) console.log('  export-utils: could not find speech config definition for '+configInfo.pluginName+' in ', ast.getSourceFile().fileName);//DEBUG
 
 
   } else if(process.env.verbose) console.log('  export-utils: cannot set plugin-name for main config entry... ');//DEBUG
+
+  return configInfo;
+}
+
+function createConfigInfo(ast){
+
+  var allInterfaces = getInterfaces(ast);
+  var interfaces = toMap(allInterfaces);
+  interfaces.delete(mainInterfaceKey);
+  var mainConfig = allInterfaces[mainInterfaceKey];
+  var mainConfigEntries;
+  if(mainConfig){
+    mainConfig = mainConfig[0];//FIXME
+    interfaces.delete(mainInterfaceKey);
+    mainConfigEntries = getPropertyList(mainConfig);
+  } else if(process.env.verbose) console.log('  export-utils: could not find main interface definition in ', ast.getSourceFile().fileName);//DEBUG
+
+  var configInfos = [];
+  mainConfigEntries.forEach(function(mainConfigEntry){
+    configInfos.push(createConfigInfosFor(ast, mainConfigEntry, interfaces, allInterfaces));
+  });
+  var configInfo;
+  if(configInfos.length < 2){
+    configInfo = configInfos[0];
+  } else {
+    configInfo = {
+      pluginName: [],
+      plugins: {}
+    }
+    configInfos.forEach(function(cinf){
+      configInfo.pluginName.push(cinf.pluginName);
+      configInfo.plugins[cinf.pluginName] = cinf;
+      console.log('  export-utils: add sub main config definition for '+cinf.pluginName+' to plugins -> ', cinf);//DEBUG
+    });
+  }
 
   var enums = [];
   configInfo.enums = enums;
@@ -226,8 +267,6 @@ function createConfigInfo(ast){
   interfaces.forEach(function(interf){
     console.log('TODO process remaining sub-config for ', interf);
   });
-
-  configInfo.subConfig = subConfig;
 
   return configInfo;
 }
