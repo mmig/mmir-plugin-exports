@@ -53,10 +53,10 @@ function getEnumList(sourceFile){
   return enums;
 }
 
-function getPropertyList(node){
+function getPropertyList(node, list){
   /** @type {Array} */
   var members = node.members;
-  var list = [];
+  list = list || [];
   var m;
   for(var i = members.length - 1; i >= 0; --i){
     m = members[i];
@@ -157,10 +157,10 @@ function createConfigInfosFor(ast, mainConfigEntry, interfaces, allInterfaces){
       mainConfigType.types.forEach(function(type){
         var name = type.typeName.getText();
         if(reConfigInterface.test(name)){
-          console.log('  export-utils: processing main-config entry types -> setting main-config type to ', type.typeName.getText());//DEBUG
+          // console.log('  export-utils: processing main-config entry types -> setting main-config type to ', type.typeName.getText());//DEBUG
           mainConfigTypeName = name;
         } else if(reSpeechConfigInterface.test(name)){
-          console.log('  export-utils: processing main-config entry types -> setting main-speechConfig type to ', type.typeName.getText());//DEBUG
+          // console.log('  export-utils: processing main-config entry types -> setting main-speechConfig type to ', type.typeName.getText());//DEBUG
           mainSpeechConfigTypeName = name;
         } else if(process.env.verbose) {
           console.log('  export-utils: unknow type for main speech entry: expected type with <.*>PluginConfigEntry or <.*>PluginSpeechConfigEntry, but got ', name);
@@ -222,12 +222,13 @@ function createConfigInfo(ast){
   var allInterfaces = getInterfaces(ast);
   var interfaces = toMap(allInterfaces);
   interfaces.delete(mainInterfaceKey);
-  var mainConfig = allInterfaces[mainInterfaceKey];
-  var mainConfigEntries;
-  if(mainConfig){
-    mainConfig = mainConfig[0];//FIXME
+  var mainConfigs = allInterfaces[mainInterfaceKey];
+  var mainConfigEntries = [];
+  if(mainConfigs){
     interfaces.delete(mainInterfaceKey);
-    mainConfigEntries = getPropertyList(mainConfig);
+    mainConfigs.forEach(function(mainConfig){
+      getPropertyList(mainConfig, mainConfigEntries);
+    });
   } else if(process.env.verbose) console.log('  export-utils: could not find main interface definition in ', ast.getSourceFile().fileName);//DEBUG
 
   var configInfos = [];
@@ -245,7 +246,7 @@ function createConfigInfo(ast){
     configInfos.forEach(function(cinf){
       configInfo.pluginName.push(cinf.pluginName);
       configInfo.plugins[cinf.pluginName] = cinf;
-      console.log('  export-utils: add sub main config definition for '+cinf.pluginName+' to plugins -> ', cinf);//DEBUG
+      // console.log('  export-utils: add sub main config definition for '+cinf.pluginName+' to plugins -> ', cinf);//DEBUG
     });
   }
 
@@ -265,7 +266,7 @@ function createConfigInfo(ast){
   });
 
   interfaces.forEach(function(interf){
-    console.log('TODO process remaining sub-config for ', interf);
+    console.log('WARNING ignored interface declaratoin for ', interf.typeName.getText());
   });
 
   return configInfo;
