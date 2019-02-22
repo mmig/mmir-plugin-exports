@@ -8,18 +8,15 @@ const HEADER = '\n/*************************************************************
                '\n *         Do not modify: ANY CHANGES WILL GET DISCARED              *'+
                '\n *********************************************************************/\n\n';
 
-function canStoreAt(filePath, code){
+function sameAlreadyExistAt(filePath, code){
   if(fs.existsSync(filePath)){
     var otherContent = fs.readFileSync(filePath, 'utf8');
     return code === otherContent;
   }
-  return true;
+  return false;
 }
 
-function renameBackupFile(file, code){
-  if(canStoreAt(file, code)){
-    return file;
-  }
+function renameBackupFile(file){
   var origFile = file;
   var count = 1;
   var fileInfo = pathParse(file);
@@ -42,7 +39,11 @@ function renameBackupFile(file, code){
 function storeToFile(dir, code, fileName){
   fileName = fileName || OUTPUT_FILE_NAME;
   var file = path.resolve(dir, fileName);
-  renameBackupFile(file, code);
+  if(sameAlreadyExistAt(file, code)){
+    if(process.env.verbose) console.log('  exports-file-util: unchanged code at '+file+' (did not create new file).');
+    return file;
+  }
+  renameBackupFile(file);
   fs.writeFileSync(file, code);
   if(process.env.verbose) console.log('  exports-file-util: created file '+file+'.');
   return file;
