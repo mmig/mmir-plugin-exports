@@ -81,23 +81,61 @@ function getEnumValueList(node){
   return list;
 }
 
-function getDoc(node, indent){
+function getDoc(node, indent, includeDefaultValues){
 	if(node.jsDoc){
 		var reindent = new Array(indent).join(' ');
     var text = node.getSourceFile().text;
-		return node.jsDoc.map(function(entry){
-			// var txt = '';
-			// if(entry.comment){
-			// 	txt += entry.comment;
-			// }
-			// if(entry.tags){
-			// 	txt += entry.tags.map(function(t){return '[@'+ t.tagName.escapedText + ': ' + t.comment + ']' }).join(', ');
-			// }
-			// return txt;
+    var defaultValues = includeDefaultValues? [] : null;
+		var text = node.jsDoc.map(function(entry){
+			if(includeDefaultValues){
+        var defVal = getDefaultValue(entry);
+        if(defVal){
+          defaultValues.push({name: node.name.getText(),value: defVal});
+        }
+      }
 			return text.substring(entry.pos, entry.end).replace(/^\s*\/\*/, '\n' + reindent+'/*').replace(/(\r?\n)\s*\*/g, '$1' + reindent+' *');
 		}).join('\n');
+    if(includeDefaultValues){
+      return {text: text, defaultValue: defaultValues[0]};
+    }
+    return text;
 	}
 	return '';
+}
+
+function getDefaultValue(comment){
+	var defaultTags = comment.tags && comment.tags.length > 0? comment.tags.filter(function(tag){ return tag.tagName.getText() === 'default';}) : null;
+  if(defaultTags){
+    // console.log('#########  export-utils: found @default tag(s) in JSDoc comment ('+defaultTags.length+') ', defaultTags);
+    var len = defaultTags.length;
+    if(process.env.verbose && len > 1){
+      console.log('  export-utils: too many @default tags in JSDoc comment for (using last one!) ', comment.parent);
+    }
+    var tag = defaultTags[len - 1];
+    if(tag){
+      var val = getTypeStringFrom(tag);
+      try{
+        //try to convert non-string default-values -> if it fails, assume it's a string
+        val = JSON.parse(val);
+        if(process.env.verbose) console.log('  export-utils: extracted default-value '+val+' ('+(typeof val)+') for ', comment.parent.name.getText());
+      } catch(err){
+        if(process.env.verbose) console.log('  export-utils: extracted default-value '+val+' (string) for ', comment.parent.name.getText());
+      }
+      return val;
+    }
+    defaultTags = void(0);
+  }
+  return defaultTags;
+}
+
+function getTypeStringFrom(tag){
+  var val;
+	if(tag.typeExpression){
+		val = tag.typeExpression.type.getText();
+	} else {
+    val = tag.comment;
+  }
+  return val;
 }
 
 function processSubConfig(prop, subConfig, interfacesMap, allInterfaces){
@@ -114,7 +152,7 @@ function processSubConfig(prop, subConfig, interfacesMap, allInterfaces){
     if(allInterfaces[subProp.type.getText()]){
       subConfigList.push(subProp);
     }
-    doc.push(getDoc(subProp));
+    doc.push(getDoc(subProp, void(0), true));
     return subProp.name.getText();
   });
 
@@ -186,7 +224,7 @@ function createConfigInfosFor(ast, mainConfigEntry, interfaces, allInterfaces){
           processSubConfig(prop, subConfig, interfaces, allInterfaces)
           // subConfig.push({name: prop.name.getText(), type: prop.type.getText(), doc: getDoc(prop)});
         }
-        configInfo.docs.push(getDoc(prop));
+        configInfo.docs.push(getDoc(prop, void(0), true));
         return prop.name.getText();
       });
 
@@ -203,7 +241,7 @@ function createConfigInfosFor(ast, mainConfigEntry, interfaces, allInterfaces){
           processSubConfig(prop, speechSubConfig, interfaces, allInterfaces)
           // speechSubConfig.push({name: prop.name.getText(), type: prop.type.getText(), doc: getDoc(prop)});
         }
-        configInfo.speechDocs.push(getDoc(prop));
+        configInfo.speechDocs.push(getDoc(prop, void(0), true));
         return prop.name.getText();
       });
 

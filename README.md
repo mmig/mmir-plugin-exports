@@ -74,6 +74,29 @@ parses the `config.d.ts` of a plugin and
     config: ...,
     speechConfig: ["someSpeechConfig"],
     ```
+    * if configuration-properties (or speech-configuration) have JSDoc `@default` values specified, they will be included in the property `defaultValues` (NOTE the default value must be `JSON.parse`'able or simple string):
+     ```
+       somePluginName: SomePluginConfigEntry | SomePluginSpeechConfigEntry;
+       ...
+     }
+     ...
+     export interface SomePluginConfigEntry extends MediaManagerPluginEntry {
+       /** @default theDefault */
+       someConfig: string;
+     }
+     export interface SomePluginSpeechConfigEntry extends SpeechConfigPluginEntry {
+       /** @default 7 */
+       someSpeechNumConfig: number;
+     }
+     ```
+     ->
+     ```
+     pluginName: "somePluginName",
+     config: [/** <js-doc> */"someConfig"],
+     speechConfig: [/** <js-doc> */"someSpeechNumConfig"],
+     defaultValues: { someConfig: "theDefault"},
+     defaultspeechValues: { someSpeechNumConfig: 7},
+     ```
  * exports other interfaces (their properties) with suffix **PluginSpeechConfigEntry** as speechConfig-property lists:  
    `export interface SomeNamePluginSpeechConfigEntry {...`
    * NOTE should extend `mmir.SpeechConfigPluginEntry`
@@ -82,6 +105,10 @@ parses the `config.d.ts` of a plugin and
    * NOTE should extend `mmir.MediaManagerPluginEntry`
  * exports enums as properties:  
    `export enum SomeName {...`
+ * NOTE: protected/special property names (for properties in `<*>PluginConfigEntry` and `<*>PluginSpeechConfigEntry`)
+   * `mod`: module name for the configuration entry of `MediaManager.plugins.env`
+   * `ctx`: the (optional) context for the configuration entry of `MediaManager.plugins.env`
+   * `config`: the custom plugin-configuration for the configuration entry of `MediaManager.plugins.env`
 
 NOTE all interfaces etc. must be defined in the root of `config.d.ts`
 

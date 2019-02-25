@@ -36,17 +36,35 @@ function generateConfig(config, configDocs, indent, isSpeechConfig){
 	var indentStr = new Array(indent + 1).join(' ');
 	var propName = isSpeechConfig? 'speechConfig' : 'config';
 
+	var defaultValues = [];
+
 	var code = '';
 	code += indentStr + propName + ': [\n';
   config.forEach(function(c, index){
     var comment = configDocs[index];
     if(comment){
-      code += reIndent(comment, indent + 2) + '\n';
+			if(comment.text){
+      	code += reIndent(comment.text, indent + 2) + '\n';
+			}
+			if(comment.defaultValue){
+				defaultValues.push(comment.defaultValue);
+			}
     }
     code += indentStr + '  ' + JSON.stringify(c) + ',\n';
   });
 	code = code.replace(/,\n$/, '\n');
   code += indentStr + '],\n';
+
+	if(defaultValues.length > 0){
+		propName = isSpeechConfig? 'defaultSpeechValues' : 'defaultValues';
+		code += indentStr + propName + ': {\n';
+		defaultValues.forEach(function(defValue){
+			code += indentStr + '  ' + defValue.name + ': ' + JSON.stringify(defValue.value) + ',\n';
+		});
+
+		code = code.replace(/,\n$/, '\n');
+	  code += indentStr + '},\n';
+	}
 
 	return code;
 }
@@ -63,6 +81,10 @@ function generateConfig(config, configDocs, indent, isSpeechConfig){
  * 												config: string[],
  * 												//the (main) speech-configuration field-names for the plugin
  * 												speechConfig: string[],
+ * 												//the configuration fields' (optionally) specified default values (via js-doc @default tag)
+ * 												defaultValues: {[configName: string]: any},
+ * 												//the speech-configuration fields' (optionally) specified default values (via js-doc @default tag)
+ * 												sdefaultSpeechValues: {[configName: string]: any},
  * 												//the JS-docs for the configuration field-names (if there is any)
  * 												docs: string[],
  * 												// the exported enums (may be empty): additinonal/optional meta-data
