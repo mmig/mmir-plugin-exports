@@ -4,7 +4,7 @@ const fs = require('fs');
 const ts = require('typescript');
 
 //const code = "type EinType = string;\n\n/** ein KOmmentar\n mit zwei Zeilen */\ninterface EineKlasse{ \n/** ein kommentar für das feld */\nfeld: EinType; }"
-var file = 'C:/Users/aaru01/git/dev_mmir-media-plugins/mmir-plugin-tts-nuance-xhr/config.d.ts';
+var file = 'D:/git_repo/mmir-plugin-speech-android/config.d.ts';
 var code = fs.readFileSync(file, 'utf8');
 const sc = ts.createSourceFile('x.ts', code, ts.ScriptTarget.Latest, true);
 
@@ -16,18 +16,34 @@ function getDoc(node, indent){
 	if(node.jsDoc){
 		var reindent = new Array(indent).join(' ');
 		return node.jsDoc.map(function(entry){
-			// var txt = '';
-			// if(entry.comment){
-			// 	txt += entry.comment;
-			// }
-			// if(entry.tags){
-			// 	txt += entry.tags.map(function(t){return '[@'+ t.tagName.escapedText + ': ' + t.comment + ']' }).join(', ');
-			// }
-			// return txt;
 			return text.substring(entry.pos, entry.end).replace(/^\s*\/\*/, '\n' + reindent+'/*').replace(/(\r?\n)\s*\*/g, '$1' + reindent+' *');
 		}).join('\n');
 	}
 	return '';
+}
+
+function getDocTags(node, includeComentText){
+	if(node.jsDoc){
+		return node.jsDoc.map(function(entry){
+			var txt = '';
+			if(includeComentText && entry.comment){
+				txt += entry.comment;
+			}
+			if(entry.tags){
+				console.log('      ', entry.tags);//DEBUG
+				txt += entry.tags.map(function(t){return '[@'+ t.tagName.escapedText + ': ' + getTypeString(t) + ']' }).join(', ');
+			}
+			return txt;
+		}).join(', \t');
+	}
+	return '';
+}
+
+function getTypeString(tag){
+	if(tag.typeExpression){
+		return tag.typeExpression.type.getText();
+	}
+	return tag.comment;
 }
 
 function getInterface(node){
@@ -69,6 +85,7 @@ function print(node) {
 		// console.log(node.jsDoc[0].tags)
 	// }
 		var additionalText = getInterface(node) || getProperty(node) || getEnum(node) || getEnumValue(node);
+		additionalText += ' \t ' + getDocTags(node, false);
     console.log(new Array(indent + 1).join(' ') + ts.SyntaxKind[node.kind] + additionalText + getDoc(node, indent + 10));//docs + tags);
     indent++;
     ts.forEachChild(node, print);
