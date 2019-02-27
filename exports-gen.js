@@ -3,6 +3,9 @@ var fileUtils = require('./file-utils.js');
 
 const OUTPUT_FILE_NAME = 'module-ids.gen.js';
 
+const FILES_FIELD_NAME = 'files';
+const MODULES_FIELD_NAME = 'modules';
+
 /**
  * HELPER adds all entries from source to target, if it is not already contained
  * @param       {Array} source the source list
@@ -22,29 +25,43 @@ var _joinTemplate = function _join(source, target, dict){
 /**
  * HELPER returns all entries for field <code>type</code>, (recursively) including the
  *        corresponding field from dependencies
- * @param       {"paths" | "workers" | "modules" | "dependencies"} type the field for which to gather entries
+ * @param       {"paths" | "workers" | "modules" | "dependencies" | "files"} type the field for which to gather entries
+ * @param       {"min" | String} [mode] OPTIONAL if the type should be modified according to a mode
  * @param       {Boolean} [isResolve] OPTIONAL for type "paths" will make the paths absolute w.r.t. the corresponding module/dependency
  *                                             (NOTE the absolute path may not be normalized, i.e. contain mixed path separators);
  * @return      {Object|Array} the "collected" entries for the requested type
  */
-var _getAllTemplate = function _getAll(type, isResolve){
+var _getAllTemplate = function _getAll(type, mode, isResolve){
+
+  if(typeof mode === 'boolean'){
+    isResolve = mode;
+    mode = void(0);
+  }
 
   var data = this[type];
   var isArray = Array.isArray(data);
   var result = isArray? [] : Object.assign({}, data);
   var dupl = result;
+  var mod = mode && this.modes[mode];
   if(isArray){
     dupl = {};
+    if(mod && mod[type]){
+      _join(this.modes[mode][type], result, dupl);
+    }
     _join(data, result, dupl);
   } else if(isResolve){
     var root = __dirname;
     Object.keys(result).forEach(function(field){
-      result[field] = root + '/' + result[field];
+      var val = result[field];
+      if(mod && mod[field]){
+        val = _paths[mod[field]];
+      }
+      result[field] = root + '/' + val;
     });
   }
   this.dependencies.forEach(function(dep){
     var depExports = require(dep + '/module-ids.gen.js');
-    var depData = depExports.getAll(type, isResolve);
+    var depData = depExports.getAll(type, mode, isResolve);
     if(isArray){
       _join(depData, result, dupl);
     } else {
@@ -55,7 +72,7 @@ var _getAllTemplate = function _getAll(type, isResolve){
   return result;
 };
 
-function generateExportsCode(packageId, paths, workers, mainModules, dependencies){
+function generateExportsCode(packageId, paths, workers, mainModules, dependencies, exportedFiles, modes){
 
   var code = fileUtils.fileHeader;
 
@@ -80,10 +97,18 @@ function generateExportsCode(packageId, paths, workers, mainModules, dependencie
 
   code += JSON.stringify(dependencies, null, 2) + ';\n';
 
+  code += 'var _exportedFiles = ';
+
+  code += JSON.stringify(exportedFiles, null, 2) + ';\n';
+
+  code += 'var _modes = ';
+
+  code += JSON.stringify(modes, null, 2) + ';\n';
+
   code += _joinTemplate.toString() + ';\n';
   code += _getAllTemplate.toString() + ';\n';
 
-  code += 'module.exports = {id: _id, paths: _paths, workers: _workers, modules: _exportedModules, dependencies: _dependencies, getAll: _getAll};\n';
+  code += 'module.exports = {id: _id, paths: _paths, workers: _workers, '+MODULES_FIELD_NAME+': _exportedModules, '+FILES_FIELD_NAME+': _exportedFiles, dependencies: _dependencies, modes: _modes, getAll: _getAll};\n';
 
   return code;
 }
@@ -96,5 +121,7 @@ function storeExports(dir, code, fileName){
 module.exports = {
   generateCode: generateExportsCode,
   writeToFile: storeExports,
-  getDefaultFileName: function(){ return OUTPUT_FILE_NAME; }
+  getDefaultFileName: function(){ return OUTPUT_FILE_NAME; },
+  getExportedFilesFieldName: function(){ return FILES_FIELD_NAME; },
+  getExportedModulesFieldName: function(){ return MODULES_FIELD_NAME; }
 }

@@ -14,11 +14,24 @@ var workersFieldName = 'workers';
 //default entry name (in mmir entry) whichs' files will be treated as exported modules
 var exportsFieldName = 'exports';
 
+//default entry name (in mmir entry) whichs' files will be treated as exported files (i.e. as "raw" file, e.g. binary files etc)
+var filesFieldName = 'exportFiles';
+
+
+//default entry name (in mmir entry) for mode-definitions {[modeName: string]: ModeDefinition} where ModeDefinition: {[originalFilePath: string]: replacementFilePath, exports?, exportFiles?}
+var modesFieldName = 'modes';
+
 var reNormalize = path.sep === '/'? null : /\\/g;
 
 var exportsGen = require('./exports-gen.js');
 
+var exportModuleFilesFieldName = exportsGen.getExportedFilesFieldName();
+var exportModuleModulesFieldName = exportsGen.getExportedModulesFieldName();
+
 function normalize(absPath, absPackageRoot){
+	if(!path.isAbsolute(absPath)){
+		absPath = path.resolve(absPackageRoot, absPath);
+	}
 	var relPath = path.relative(absPackageRoot, absPath);
 	return reNormalize? relPath.replace(reNormalize, '/') : relPath;
 }
@@ -42,6 +55,9 @@ function getAliasEntry(path, alias){
 }
 
 function getFiles(dirPath){
+	if(!fs.existsSync(dirPath)){
+		throw new Error('file or directory does not exist: '+dirPath);
+	}
 	if(!fileUtils.isDirectory(dirPath)){
 		return [path.resolve(dirPath)];
 	}
@@ -222,29 +238,116 @@ function getIncludeModules(packageInfo, alias, rootPath, includeList){
 	//additional exports:
 	var exportsDirs = packageInfo.pkg.mmir && packageInfo.pkg.mmir[exportsFieldName];
 	if(exportsDirs){
-		if(!Array.isArray(exportsDirs)){
-			exportsDirs = [exportsDirs];
-		}
-		resolvePaths(pkgPath, exportsDirs, false);
-		exportsDirs.forEach(function(expDir){
+		doAddIncludes(includeList, rootPath, alias, exportsDirs, pkgPath, id, 'include-module');
+	}
 
-			getFiles(expDir).forEach(function(file){
+	return includeList;
+}
 
-				file = normalize(file, rootPath);
-				var eid = getAliasEntry(file, alias);
-				if(!eid){
-					eid = id + '/' + path.basename(file, '.js');
-					addAlias(eid, file, alias, id);
-				}
+function getIncludeFiles(packageInfo, alias, rootPath, includeList){
 
-				if(includeList.findIndex(function(entry){ return entry === eid;}) === -1){
-					if(process.env.verbose) console.log('  export-utils: will add include-module for : ['+eid+'] -> ', file);//DEBUG
-					includeList.push(eid);
+	if(Array.isArray(packageInfo) && alias){
+		packageInfo.forEach(function(entry){
+			getIncludeFiles(entry, alias, rootPath, includeList);
+		});
+		return;
+	}
+
+	includeList = includeList || [];
+	var id = packageInfo.pkg.name;
+	var pkgPath = path.dirname(packageInfo.path);
+
+	//file exports:
+	var exportsDirs = packageInfo.pkg.mmir && packageInfo.pkg.mmir[filesFieldName];
+	if(exportsDirs){
+		doAddIncludes(includeList, rootPath, alias, exportsDirs, pkgPath, id, 'exported file');
+	}
+
+	return includeList;
+}
+
+
+function getModes(packageInfo, alias, rootPath, modes){
+
+	if(Array.isArray(packageInfo) && alias){
+		packageInfo.forEach(function(entry){
+			getModes(entry, alias, rootPath, modes);
+		});
+		return;
+	}
+
+	modes = modes || {};
+	var id = packageInfo.pkg.name;
+	var pkgPath = path.dirname(packageInfo.path);
+
+	var pkgModes = packageInfo.pkg.mmir && packageInfo.pkg.mmir[modesFieldName];
+	if(pkgModes){
+		Object.keys(pkgModes).forEach(function(mode){
+
+			var modeDef = pkgModes[mode];
+			var modeRes = {};
+			Object.keys(modeDef).forEach(function(modeField){
+				if(modeField == exportsFieldName){
+					var exportsList = [];
+					doAddIncludes(exportsList, rootPath, alias, modeDef[modeField], pkgPath, id, 'include-module (mode: '+mode+')');
+					modeRes[exportModuleModulesFieldName] = exportsList;
+				} else if(modeField == filesFieldName){
+					var filesList = [];
+					doAddIncludes(filesList, rootPath, alias, modeDef[modeField], pkgPath, id, 'exported file (mode: '+mode+')');
+					modeRes[exportModuleFilesFieldName] = filesList;
+				} else {
+					var file = normalize(modeField, rootPath);
+					var sourceId = getAliasEntry(file, alias);
+					if(!sourceId){
+						throw new Error('cannot remap from file '+file+' in mode '+mode+': there is no alias specified for the file (must be a valid lib/source file)');
+					}
+					console.log('  export-utils: get target for module replacement for : ['+sourceId+'] -> ', modeDef[modeField]);//DEBUG
+					file = normalize(modeDef[modeField], rootPath);
+					var targetId = getAliasEntry(file, alias);
+					if(!targetId){
+						throw new Error('cannot remap to file '+file+' in mode '+mode+': there is no alias specified for the file (must be a valid lib/source file)');
+					}
+
+					if(process.env.verbose) console.log('  export-utils: will add module replacement for : ['+sourceId+'] -> ['+targetId+']');//DEBUG
+
+					modeRes[sourceId] = targetId;
 				}
 			});
 
+			if(modes[mode]){
+				_.merge(modes[mode], modeRes);
+			} else {
+				modes[mode] = modeRes;
+			}
 		});
 	}
+
+	return modes;
+}
+
+function doAddIncludes(includeList, rootPath, alias, exportsDirs, pkgPath, id, debugMessageType){
+	if(!Array.isArray(exportsDirs)){
+		exportsDirs = [exportsDirs];
+	}
+	resolvePaths(pkgPath, exportsDirs, false);
+	exportsDirs.forEach(function(expDir){
+
+		getFiles(expDir).forEach(function(file){
+
+			file = normalize(file, rootPath);
+			var eid = getAliasEntry(file, alias);
+			if(!eid){
+				eid = id + '/' + path.basename(file, '.js');
+				addAlias(eid, file, alias, id);
+			}
+
+			if(includeList.findIndex(function(entry){ return entry === eid;}) === -1){
+				if(process.env.verbose) console.log('  export-utils: will add '+debugMessageType+' for : ['+eid+'] -> ', file);//DEBUG
+				includeList.push(eid);
+			}
+		});
+
+	});
 
 	return includeList;
 }
@@ -295,13 +398,16 @@ module.exports = {
 	 * 																	if given, the workers for the plugin-package will be added to it; if omitted a new list will be created internally
 	 * @param  {Array} [includeModulesList]  OPTIONAL (positional argument)
 	 * 																	     if given, the exported/entry-point modules for the plugin-package will be added to it; if omitted a new list will be created internally
+	 * @param  {Array} [includeFilesList]  OPTIONAL (positional argument)
+	 * 																	     if given, the exported files for the plugin-package will be added to it; if omitted a new list will be created internally
 	 * @returns {String} the file path to which the module information for pluginPackageDir were written to
 	 */
-	createModuleIds: function(pluginPackageDir, outputFileName, alias, workersList, includeModulesList){
+	createModuleIds: function(pluginPackageDir, outputFileName, alias, workersList, includeModulesList, includeFilesList){
 
 		alias = alias || {};
 		workersList = workersList || [];
 		includeModulesList = includeModulesList || [];
+		includeFilesList = includeFilesList || [];
 
 		var packageInfo = getPackageInfo(pluginPackageDir);
 		var packageRoot = path.dirname(path.resolve(packageInfo.path));
@@ -313,13 +419,20 @@ module.exports = {
 		getAliasFor(packageInfo, packageRoot, alias);
 		getWorkerListFor(packageInfo, packageRoot, workersList);
 
+		//list of files that should be included "raw" (e.g. binary files)
+		getIncludeFiles(packageInfo, alias, packageRoot, includeFilesList);
+
+		//list of files that should be included "raw" (e.g. binary files)
+		var modes = {}//FIXME
+		getModes(packageInfo, alias, packageRoot, modes);
+
 		//NOTE this adds "short-hand" alias definitions (i.e. alias for package-id -> main-file):
 		//       if these would be added to alias first, then the path-resolution would not work properly anymore,
 		//		 since it would try to resolve against the package-main-file, and not its path anymore...
 		//   -> must add these after the "long-form" alias definitions were added!
 		getIncludeModules(packageInfo, alias, packageRoot, includeModulesList);
 
-		var code = exportsGen.generateCode(packageId, alias, workersList, includeModulesList, deps.map(function(d){return d.pkg.name}));
+		var code = exportsGen.generateCode(packageId, alias, workersList, includeModulesList, deps.map(function(d){return d.pkg.name}), includeFilesList, modes);
 		return exportsGen.writeToFile(packageRoot, code, outputFileName);
 	}
 };

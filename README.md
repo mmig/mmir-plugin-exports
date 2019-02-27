@@ -15,6 +15,13 @@ parses the `package.json` of a plugin and
  * creates a list of exported `modules` for (non-recursive!)
    * `<custom field> mmir.exports`:  
      `string | Array<string>`: single or list of directory/ies or file(s)
+ * creates a list of exported `files` for (non-recursive!)
+   * `<custom field> mmir.exportedFiles`:  
+     `string | Array<string>`: single or list of file(s)
+ * creates an object `modes` for
+   * `<custom field> mmir.modes`:  
+     `{[modeName: string]: ModeDefinition}`: where each `ModeDefinition` may have file-replacement-mappings and, optionally, `exports` and `exportFiles` fields  
+     `{[originalFile: string]: ReplacementFile, exports?, exportFiles?}`
  * adds as entry to exported `modules` with alias/path for the plugin itself, i.e `{<plugin ID>: <main file>}`
    * `main`
  * creates a list of `dependencies` for all entries in
