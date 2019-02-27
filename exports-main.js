@@ -288,20 +288,27 @@ function getModes(packageInfo, alias, rootPath, modes){
 			var modeRes = {};
 			Object.keys(modeDef).forEach(function(modeField){
 				if(modeField == exportsFieldName){
+					
 					var exportsList = [];
 					doAddIncludes(exportsList, rootPath, alias, modeDef[modeField], pkgPath, id, 'include-module (mode: '+mode+')');
 					modeRes[exportModuleModulesFieldName] = exportsList;
+
 				} else if(modeField == filesFieldName){
+
 					var filesList = [];
 					doAddIncludes(filesList, rootPath, alias, modeDef[modeField], pkgPath, id, 'exported file (mode: '+mode+')');
 					modeRes[exportModuleFilesFieldName] = filesList;
+
 				} else {
+
 					var file = normalize(modeField, rootPath);
 					var sourceId = getAliasEntry(file, alias);
 					if(!sourceId){
 						throw new Error('cannot remap from file '+file+' in mode '+mode+': there is no alias specified for the file (must be a valid lib/source file)');
 					}
-					console.log('  export-utils: get target for module replacement for : ['+sourceId+'] -> ', modeDef[modeField]);//DEBUG
+
+					if(process.env.verbose) console.log('  export-utils: get target for module replacement for : ['+sourceId+'] -> ', modeDef[modeField]);//DEBUG
+
 					file = normalize(modeDef[modeField], rootPath);
 					var targetId = getAliasEntry(file, alias);
 					if(!targetId){
