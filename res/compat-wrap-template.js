@@ -20,7 +20,7 @@
 			if(isArray(ids)){
 				return ids.map(function(id){ return getId(id);});
 			}
-			return ids? ids.replace(/\bconstants$/, 'resources') : ids;
+			return ids? ids.replace(/\bresources$/, 'constants') : ids;
 		};
 		var __req = _req;
 		_req = function(deps, id, success, error){
