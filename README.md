@@ -20,8 +20,8 @@ parses the `package.json` of a plugin and
      `string | Array<string>`: single or list of file(s)
  * creates an object `modes` for
    * `<custom field> mmir.modes`:  
-     `{[modeName: string]: ModeDefinition}`: where each `ModeDefinition` may have file-replacement-mappings and, optionally, `exports` and `exportFiles` fields  
-     `{[originalFile: string]: ReplacementFile, exports?, exportFiles?}`
+     `{[modeName: string]: ModeDefinition}`: where each `ModeDefinition` may have file-replacement-mappings and, optionally, `exports` and `exportFiles` fields
+     * `ModeDefinition`: `{[originalFile: string]: ReplacementFile, exports?, exportFiles?}`
  * adds as entry to exported `modules` with alias/path for the plugin itself, i.e `{<plugin ID>: <main file>}`
    * `main`
  * creates a list of `dependencies` for all entries in
