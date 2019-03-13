@@ -274,18 +274,20 @@ function createConfigInfo(ast){
     configInfos.push(createConfigInfosFor(ast, mainConfigEntry, interfaces, allInterfaces));
   });
   var configInfo;
-  if(configInfos.length < 2){
+  if(configInfos.length === 1){
     configInfo = configInfos[0];
   } else {
     configInfo = {
       pluginName: [],
       plugins: {}
     }
-    configInfos.forEach(function(cinf){
-      configInfo.pluginName.push(cinf.pluginName);
-      configInfo.plugins[cinf.pluginName] = cinf;
-      // console.log('  export-utils: add sub main config definition for '+cinf.pluginName+' to plugins -> ', cinf);//DEBUG
-    });
+    if(configInfos.length > 0){
+      configInfos.forEach(function(cinf){
+        configInfo.pluginName.push(cinf.pluginName);
+        configInfo.plugins[cinf.pluginName] = cinf;
+        // console.log('  export-utils: add sub main config definition for '+cinf.pluginName+' to plugins -> ', cinf);//DEBUG
+      });
+    }
   }
 
   var enums = [];
