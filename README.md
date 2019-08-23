@@ -22,6 +22,9 @@ parses the `package.json` of a plugin and
    * `<custom field> mmir.modes`:  
      `{[modeName: string]: ModeDefinition}`: where each `ModeDefinition` may have file-replacement-mappings and, optionally, `exports` and `exportFiles` fields
      * `ModeDefinition`: `{[originalFile: string]: ReplacementFile, exports?, exportFiles?}`
+ * creates (string) entry `buildConfig` for
+   * `<custom field> mmir.buildConfig`:  
+      `string`: a file(s) containing a CommonJS module that exports a single or a list of (mmir) build configurations for the plugin
  * adds as entry to exported `modules` with alias/path for the plugin itself, i.e `{<plugin ID>: <main file>}`
    * `main`
  * creates a list of `dependencies` for all entries in

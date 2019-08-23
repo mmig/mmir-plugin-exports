@@ -72,7 +72,38 @@ var _getAllTemplate = function _getAll(type, mode, isResolve){
   return result;
 };
 
-function generateExportsCode(packageId, paths, workers, mainModules, dependencies, exportedFiles, modes){
+/**
+ * HELPER returns list of (mmir) build configurations (to be merged into the main mmir build configuration)
+ *
+ * @param       {Object} [buildConfigsMap] OPTIONAL a map for already included buildConfigs: {[buildConfig: BuildConfig]: Boolean}
+ * @return      {Array<BuildConfig>} a list of (mmir) build configurations; may be empty
+ */
+var _getBuildConfigTemplate = function _getBuildConfig(buildConfigsMap){
+
+  var buildConfigs = [];
+  var dupl = buildConfigsMap | {};
+  if(_buildConfig){
+    var buildConfig = require(__dirname+'/'+_buildConfig);
+    if(Array.isArray(buildConfig)){
+      _join(buildConfig, buildConfigs, dupl);
+    } else if(!dupl){
+      dupl[buildConfig] = true;
+      buildConfigs.push(buildConfig);
+    }
+  }
+
+  this.dependencies.forEach(function(dep){
+    var depExports = require(dep + '/module-ids.gen.js');
+    if(depExports.buildConfig){
+      var depBuildConfigs = depExports.getBuildConfig(dupl);
+      _join(depBuildConfigs, buildConfigs, dupl);
+    }
+  });
+
+  return buildConfigs;
+};
+
+function generateExportsCode(packageId, paths, workers, mainModules, dependencies, exportedFiles, modes, buildConfigFiles){
 
   var code = fileUtils.fileHeader;
 
@@ -105,10 +136,25 @@ function generateExportsCode(packageId, paths, workers, mainModules, dependencie
 
   code += JSON.stringify(modes, null, 2) + ';\n';
 
+  code += 'var _buildConfig';
+  if(buildConfigFiles && buildConfigFiles.length > 0){
+    code += ' = ';
+    if(buildConfigFiles.length > 1){
+      throw new Error('Encountered multiple build config files for '+packageId+', only a single build config file is supported: '+buildConfigFiles.join(', '));
+    }
+    code += JSON.stringify(buildConfigFiles[0], null, 2)
+  }
+  code += ';\n';
+
   code += _joinTemplate.toString() + ';\n';
   code += _getAllTemplate.toString() + ';\n';
+  code += _getBuildConfigTemplate.toString() + ';\n';
 
-  code += 'module.exports = {id: _id, paths: _paths, workers: _workers, '+MODULES_FIELD_NAME+': _exportedModules, '+FILES_FIELD_NAME+': _exportedFiles, dependencies: _dependencies, modes: _modes, getAll: _getAll};\n';
+  code += 'module.exports = {id: _id, paths: _paths, workers: _workers, '+
+              MODULES_FIELD_NAME+': _exportedModules, '+
+              FILES_FIELD_NAME+': _exportedFiles, '+
+              'dependencies: _dependencies, modes: _modes, buildConfig: _buildConfig, '+
+              'getAll: _getAll, getBuildConfig: _getBuildConfig};\n';
 
   return code;
 }

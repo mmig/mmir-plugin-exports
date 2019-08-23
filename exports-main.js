@@ -21,6 +21,9 @@ var filesFieldName = 'exportFiles';
 //default entry name (in mmir entry) for mode-definitions {[modeName: string]: ModeDefinition} where ModeDefinition: {[originalFilePath: string]: replacementFilePath, exports?, exportFiles?}
 var modesFieldName = 'modes';
 
+//default entry name (in mmir entry) whichs' file or list of files will be included as the plugin's (mmir) build configuration
+var buildConfigFieldName = 'buildConfig';
+
 var reNormalize = path.sep === '/'? null : /\\/g;
 
 var exportsGen = require('./exports-gen.js');
@@ -288,7 +291,7 @@ function getModes(packageInfo, alias, rootPath, modes){
 			var modeRes = {};
 			Object.keys(modeDef).forEach(function(modeField){
 				if(modeField == exportsFieldName){
-					
+
 					var exportsList = [];
 					doAddIncludes(exportsList, rootPath, alias, modeDef[modeField], pkgPath, id, 'include-module (mode: '+mode+')');
 					modeRes[exportModuleModulesFieldName] = exportsList;
@@ -330,6 +333,33 @@ function getModes(packageInfo, alias, rootPath, modes){
 	}
 
 	return modes;
+}
+
+function getBuildConfigFiles(packageInfo, alias, rootPath, buildConfigList){
+
+	if(Array.isArray(packageInfo) && alias){
+		packageInfo.forEach(function(entry){
+			getBuildConfigFiles(entry, alias, rootPath, buildConfigList);
+		});
+		return;
+	}
+
+	buildConfigList = buildConfigList || [];
+	var pkgPath = path.dirname(packageInfo.path);
+
+	//build-config exports:
+	var buildConfigFile = packageInfo.pkg.mmir && packageInfo.pkg.mmir[buildConfigFieldName];
+	if(buildConfigFile){
+		var file = path.resolve(pkgPath, buildConfigFile);
+		if(!fs.existsSync(file)){
+			throw new Error('file does not exist: '+file);
+		}
+		file = normalize(file, rootPath);
+		if(process.env.verbose) console.log('  export-utils: adding plugin build config file -> ', file);//DEBUG
+		buildConfigList.push(file);
+	}
+
+	return buildConfigList;
 }
 
 function doAddIncludes(includeList, rootPath, alias, exportsDirs, pkgPath, id, debugMessageType){
@@ -433,13 +463,17 @@ module.exports = {
 		var modes = {}//FIXME
 		getModes(packageInfo, alias, packageRoot, modes);
 
+		//list of build-config files for the plugin
+		var buildConfigList = [];
+		getBuildConfigFiles(packageInfo, alias, packageRoot, buildConfigList);
+
 		//NOTE this adds "short-hand" alias definitions (i.e. alias for package-id -> main-file):
 		//       if these would be added to alias first, then the path-resolution would not work properly anymore,
 		//		 since it would try to resolve against the package-main-file, and not its path anymore...
 		//   -> must add these after the "long-form" alias definitions were added!
 		getIncludeModules(packageInfo, alias, packageRoot, includeModulesList);
 
-		var code = exportsGen.generateCode(packageId, alias, workersList, includeModulesList, deps.map(function(d){return d.pkg.name}), includeFilesList, modes);
+		var code = exportsGen.generateCode(packageId, alias, workersList, includeModulesList, deps.map(function(d){return d.pkg.name}), includeFilesList, modes, buildConfigList);
 		return exportsGen.writeToFile(packageRoot, code, outputFileName);
 	}
 };
