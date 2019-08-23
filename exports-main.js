@@ -141,10 +141,10 @@ function getAliasFor(packageInfo, rootPath, alias){
 
 	alias = alias || {};
 
-	var id = packageInfo.pkg.name;
+	var id = packageInfo.package.name;
 	var pkgPath = path.dirname(packageInfo.path);
 
-	var workersDirs = packageInfo.pkg.mmir && packageInfo.pkg.mmir[workersFieldName];
+	var workersDirs = packageInfo.package.mmir && packageInfo.package.mmir[workersFieldName];
 	if(workersDirs){
 		if(!Array.isArray(workersDirs)){
 			workersDirs = [workersDirs];
@@ -153,7 +153,7 @@ function getAliasFor(packageInfo, rootPath, alias){
 		resolvePaths(pkgPath, workersDirs, false);
 	}
 
-	var srcDirs = packageInfo.pkg.directories && packageInfo.pkg.directories[srcDirName];
+	var srcDirs = packageInfo.package.directories && packageInfo.package.directories[srcDirName];
 	if(srcDirs){
 		if(!Array.isArray(srcDirs)){
 			srcDirs = [srcDirs];
@@ -190,9 +190,9 @@ function getWorkerListFor(packageInfo, rootPath, list){
 
 	var pkgPath = path.dirname(packageInfo.path);
 
-	//if(process.env.verbose) console.log('  export-utils: looking for workers in ', packageInfo.pkg.name, ' -> ', packageInfo.pkg.directories);//DEBUG
+	//if(process.env.verbose) console.log('  export-utils: looking for workers in ', packageInfo.package.name, ' -> ', packageInfo.package.directories);//DEBUG
 
-	var srcDirs = packageInfo.pkg.mmir && packageInfo.pkg.mmir[workersFieldName];
+	var srcDirs = packageInfo.package.mmir && packageInfo.package.mmir[workersFieldName];
 	if(!srcDirs){
 		return list;
 	} else if(!Array.isArray(srcDirs)){
@@ -200,7 +200,7 @@ function getWorkerListFor(packageInfo, rootPath, list){
 	}
 
 
-	var pkgId = packageInfo.pkg.name;
+	var pkgId = packageInfo.package.name;
 	srcDirs.forEach(function(srcDir){
 
 		srcDir = path.resolve(pkgPath, srcDir);
@@ -226,8 +226,8 @@ function getIncludeModules(packageInfo, alias, rootPath, includeList){
 	}
 
 	includeList = includeList || [];
-	var id = packageInfo.pkg.name;
-	var mainFile = packageInfo.pkg.main;
+	var id = packageInfo.package.name;
+	var mainFile = packageInfo.package.main;
 	if(!mainFile){
 		return;
 	}
@@ -239,7 +239,7 @@ function getIncludeModules(packageInfo, alias, rootPath, includeList){
 	includeList.push(id);
 
 	//additional exports:
-	var exportsDirs = packageInfo.pkg.mmir && packageInfo.pkg.mmir[exportsFieldName];
+	var exportsDirs = packageInfo.package.mmir && packageInfo.package.mmir[exportsFieldName];
 	if(exportsDirs){
 		doAddIncludes(includeList, rootPath, alias, exportsDirs, pkgPath, id, 'include-module');
 	}
@@ -257,11 +257,11 @@ function getIncludeFiles(packageInfo, alias, rootPath, includeList){
 	}
 
 	includeList = includeList || [];
-	var id = packageInfo.pkg.name;
+	var id = packageInfo.package.name;
 	var pkgPath = path.dirname(packageInfo.path);
 
 	//file exports:
-	var exportsDirs = packageInfo.pkg.mmir && packageInfo.pkg.mmir[filesFieldName];
+	var exportsDirs = packageInfo.package.mmir && packageInfo.package.mmir[filesFieldName];
 	if(exportsDirs){
 		doAddIncludes(includeList, rootPath, alias, exportsDirs, pkgPath, id, 'exported file');
 	}
@@ -280,10 +280,10 @@ function getModes(packageInfo, alias, rootPath, modes){
 	}
 
 	modes = modes || {};
-	var id = packageInfo.pkg.name;
+	var id = packageInfo.package.name;
 	var pkgPath = path.dirname(packageInfo.path);
 
-	var pkgModes = packageInfo.pkg.mmir && packageInfo.pkg.mmir[modesFieldName];
+	var pkgModes = packageInfo.package.mmir && packageInfo.package.mmir[modesFieldName];
 	if(pkgModes){
 		Object.keys(pkgModes).forEach(function(mode){
 
@@ -348,7 +348,7 @@ function getBuildConfigFiles(packageInfo, alias, rootPath, buildConfigList){
 	var pkgPath = path.dirname(packageInfo.path);
 
 	//build-config exports:
-	var buildConfigFile = packageInfo.pkg.mmir && packageInfo.pkg.mmir[buildConfigFieldName];
+	var buildConfigFile = packageInfo.package.mmir && packageInfo.package.mmir[buildConfigFieldName];
 	if(buildConfigFile){
 		var file = path.resolve(pkgPath, buildConfigFile);
 		if(!fs.existsSync(file)){
@@ -394,9 +394,9 @@ function getDependencies(packageInfo, list){
 	list = list || [];
 
 	var info;
-	if(packageInfo.pkg.dependencies){
+	if(packageInfo.package.dependencies){
 		var packagePaths = [path.dirname(packageInfo.path)];
-		for(var dep in packageInfo.pkg.dependencies){
+		for(var dep in packageInfo.package.dependencies){
 			info = getPackageInfo(path.dirname(require.resolve(dep, {paths: packagePaths})));
 			list.push(info);
 			getDependencies(info, list);
@@ -449,7 +449,7 @@ module.exports = {
 		var packageInfo = getPackageInfo(pluginPackageDir);
 		var packageRoot = path.dirname(path.resolve(packageInfo.path));
 
-		var packageId = packageInfo.pkg.name;
+		var packageId = packageInfo.package.name;
 		// if(process.env.verbose) console.log('  package info ('+packageRoot+'): ', packageInfo);
 		var deps = getDependencies(packageInfo);
 
@@ -473,7 +473,7 @@ module.exports = {
 		//   -> must add these after the "long-form" alias definitions were added!
 		getIncludeModules(packageInfo, alias, packageRoot, includeModulesList);
 
-		var code = exportsGen.generateCode(packageId, alias, workersList, includeModulesList, deps.map(function(d){return d.pkg.name}), includeFilesList, modes, buildConfigList);
+		var code = exportsGen.generateCode(packageId, alias, workersList, includeModulesList, deps.map(function(d){return d.package.name}), includeFilesList, modes, buildConfigList);
 		return exportsGen.writeToFile(packageRoot, code, outputFileName);
 	}
 };

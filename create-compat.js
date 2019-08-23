@@ -223,7 +223,7 @@ function createCompatForAll(pluginPackageDir){
   var packageRoot = path.dirname(path.resolve(packageInfo.path));
 
   var templateInfo;
-  var compat = packageInfo.pkg.mmir && packageInfo.pkg.mmir.compat;
+  var compat = packageInfo.package.mmir && packageInfo.package.mmir.compat;
   var createdFiles = [];
   if(compat){
     var type, target, targetItem, result;
