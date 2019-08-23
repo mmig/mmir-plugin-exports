@@ -1,5 +1,5 @@
 
-	return {initialize: function (){
-	  var origArgs = arguments;
-	  /*require-orig-define*/;
-	}};
+  return {initialize: function (){
+    var origArgs = arguments;
+    /*require-orig-define*/;
+  }};
