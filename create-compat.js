@@ -76,7 +76,7 @@ function loadTemplates(templateInfo){
   }
 }
 
-function createMainMedia(defineCall, code, targetInfo, templateInfo){
+function createMainMedia(defineCall, code, _targetInfo, templateInfo){
 
   loadTemplates(templateInfo);
   var compatDefineTemplate = templateInfo.defineTemplate;
@@ -120,7 +120,7 @@ function createMainMedia(defineCall, code, targetInfo, templateInfo){
 }
 
 
-function createMainSimple(defineCall, code, targetInfo, templateInfo){
+function createMainSimple(defineCall, code, _targetInfo, templateInfo){
 
   loadTemplates(templateInfo);
   var compatDefineTemplate = templateInfo.defineTemplate;
