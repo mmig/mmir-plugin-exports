@@ -389,17 +389,25 @@ function doAddIncludes(includeList, rootPath, alias, exportsDirs, pkgPath, id, d
   return includeList;
 }
 
-function getDependencies(packageInfo, list){
+function getDependencies(packageInfo, list, set){
 
   list = list || [];
 
-  var info;
+  var info, pkg;
   if(packageInfo.package.dependencies){
     var packagePaths = [path.dirname(packageInfo.path)];
+    set = set || new Set();
     for(var dep in packageInfo.package.dependencies){
       info = getPackageInfo(path.dirname(require.resolve(dep, {paths: packagePaths})));
-      list.push(info);
-      getDependencies(info, list);
+      pkg = info.package;
+      if(!set.has(pkg.name)){
+        if(process.env.verbose) console.log('  export-utils: adding dependency entry for '+pkg.name+', located at ', info.path);//DEBUG
+        list.push(info);
+        set.add(pkg.name);
+      } else if(process.env.verbose){
+        console.log('  export-utils: ignoreing dependency (was already added) for '+pkg.name+', located at ', info.path);//DEBUG
+      }
+      getDependencies(info, list, set);
     }
   }
 
