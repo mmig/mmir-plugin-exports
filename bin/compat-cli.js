@@ -35,28 +35,28 @@ var cli = meow(`
     ${appName} ~/mmir-plugin-encoder-core/www/webAudioInput.js
     ${appName} ~/mmir-plugin-encoder-core/www/webAudioInput.js -f backwardsCompatPlugin.js -t media
 `, {
-	flags: {
+  flags: {
     type: {
-			type: 'string',
-			alias: 't',
-			default: 'media'
+      type: 'string',
+      alias: 't',
+      default: 'media'
     },
     exported: {
-			type: 'string',
-			alias: 'e',
-			default: void(0)
+      type: 'string',
+      alias: 'e',
+      default: void(0)
     },
-		file: {
-			type: 'string',
-			alias: 'f',
-			default: void(0)
-		},
+    file: {
+      type: 'string',
+      alias: 'f',
+      default: void(0)
+    },
     verbose: {
-			type: 'boolean',
-			alias: 'v',
-			default: false
-		}
-	}
+      type: 'boolean',
+      alias: 'v',
+      default: false
+    }
+  }
 });
 
 // console.log(cli);
@@ -82,7 +82,7 @@ try {
 
 } catch(err){
 
-	console.error(`
+  console.error(`
   An Error occurred for:
     ${appName} ${cli.input.join(' ')} -f ${cli.flags.file} -t ${cli.flags.type} -e ${cli.flags.exported}
 

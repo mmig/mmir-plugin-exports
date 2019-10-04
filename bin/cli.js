@@ -27,23 +27,23 @@ var cli = meow(`
     ${appName} ~/mmir-plugin-encoder-core
     ${appName} ~/mmir-plugin-encoder-core -f module-info.js
 `, {
-	flags: {
-		file: {
-			type: 'string',
-			alias: 'f',
-			default: gen.getDefaultFileName()
-		},
-		cfile: {
-			type: 'string',
-			alias: 'c',
-			default: genc.getDefaultFileName()
-		},
+  flags: {
+    file: {
+      type: 'string',
+      alias: 'f',
+      default: gen.getDefaultFileName()
+    },
+    cfile: {
+      type: 'string',
+      alias: 'c',
+      default: genc.getDefaultFileName()
+    },
     verbose: {
-			type: 'boolean',
-			alias: 'v',
-			default: false
-		}
-	}
+      type: 'boolean',
+      alias: 'v',
+      default: false
+    }
+  }
 });
 
 // console.log(cli);
@@ -68,7 +68,7 @@ try {
 
 } catch(err){
 
-	console.error(`
+  console.error(`
   An Error occurred for:
     ${appName} ${cli.input.join(' ')} -f ${cli.flags.file} -c ${cli.flags.cfile}
 

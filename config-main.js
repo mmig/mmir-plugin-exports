@@ -82,29 +82,29 @@ function getEnumValueList(node){
 }
 
 function getDoc(node, indent, includeDefaultValues){
-	if(node.jsDoc){
-		var reindent = new Array(indent).join(' ');
+  if(node.jsDoc){
+    var reindent = new Array(indent).join(' ');
     var text = node.getSourceFile().text;
     var defaultValues = includeDefaultValues? [] : null;
-		var text = node.jsDoc.map(function(entry){
-			if(includeDefaultValues){
+    var text = node.jsDoc.map(function(entry){
+      if(includeDefaultValues){
         var defVal = getDefaultValue(entry);
         if(defVal){
           defaultValues.push({name: node.name.getText(),value: defVal});
         }
       }
-			return text.substring(entry.pos, entry.end).replace(/^\s*\/\*/, '\n' + reindent+'/*').replace(/(\r?\n)\s*\*/g, '$1' + reindent+' *');
-		}).join('\n');
+      return text.substring(entry.pos, entry.end).replace(/^\s*\/\*/, '\n' + reindent+'/*').replace(/(\r?\n)\s*\*/g, '$1' + reindent+' *');
+    }).join('\n');
     if(includeDefaultValues){
       return {text: text, defaultValue: defaultValues[0]};
     }
     return text;
-	}
-	return '';
+  }
+  return '';
 }
 
 function getDefaultValue(comment){
-	var defaultTags = comment.tags && comment.tags.length > 0? comment.tags.filter(function(tag){ return tag.tagName.getText() === 'default';}) : null;
+  var defaultTags = comment.tags && comment.tags.length > 0? comment.tags.filter(function(tag){ return tag.tagName.getText() === 'default';}) : null;
   if(defaultTags){
     // console.log('#########  export-utils: found @default tag(s) in JSDoc comment ('+defaultTags.length+') ', defaultTags);
     var len = defaultTags.length;
@@ -130,9 +130,9 @@ function getDefaultValue(comment){
 
 function getTypeStringFrom(tag){
   var val;
-	if(tag.typeExpression){
-		val = tag.typeExpression.type.getText();
-	} else {
+  if(tag.typeExpression){
+    val = tag.typeExpression.type.getText();
+  } else {
     val = tag.comment;
   }
   return val;
