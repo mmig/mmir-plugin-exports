@@ -15,13 +15,14 @@ var cli = meow(`
     ${appName} <directory path>
 
   Options
-    --file, -f     the name of generated module IDs file
-                    DEFAULT: ${gen.getDefaultFileName()}
-    --cfile, -c    the name of generated module config file
-                    DEFAULT: ${genc.getDefaultFileName()}
-    --help         show usage information
-    --verbose, -v  show additional information
-                    DEFAULT: false
+    --file, -f         the name of generated module IDs file
+                         DEFAULT: ${gen.getDefaultFileName()}
+    --cfile, -c        the name of generated module config file
+                         DEFAULT: ${genc.getDefaultFileName()}
+    --ignore-deps, -i  ignore dependencies (in package.json)
+    --help             show usage information
+    --verbose, -v      show additional information
+                        DEFAULT: false
 
   Examples
     ${appName} ~/mmir-plugin-encoder-core
@@ -37,6 +38,11 @@ var cli = meow(`
       type: 'string',
       alias: 'c',
       default: genc.getDefaultFileName()
+    },
+    ignoreDeps: {
+      type: 'boolean',
+      alias: 'i',
+      default: false
     },
     verbose: {
       type: 'boolean',
@@ -60,7 +66,7 @@ if(cli.flags.verbose){
 try {
 
   //createModuleIds: function(pluginPackageDir, outputFileName, alias, workersList, includeModulesList)
-  var result = main.createModuleIds(cli.input[0], cli.flags.file);
+  var result = main.createModuleIds(cli.input[0], cli.flags.file, void(0), void(0), void(0), void(0), cli.flags.ignoreDeps);
   console.log('  created file ' + result);
 
   result = mainc.createModuleConfigs(cli.input[0], cli.flags.cfile);

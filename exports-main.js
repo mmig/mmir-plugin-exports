@@ -441,9 +441,11 @@ module.exports = {
    * 																	     if given, the exported/entry-point modules for the plugin-package will be added to it; if omitted a new list will be created internally
    * @param  {Array} [includeFilesList]  OPTIONAL (positional argument)
    * 																	     if given, the exported files for the plugin-package will be added to it; if omitted a new list will be created internally
+   * @param  {Boolean} [ignoreDependencies]  OPTIONAL (positional argument)
+   * 																	     if true, does not create entries for dependency list
    * @returns {String} the file path to which the module information for pluginPackageDir were written to
    */
-  createModuleIds: function(pluginPackageDir, outputFileName, alias, workersList, includeModulesList, includeFilesList){
+  createModuleIds: function(pluginPackageDir, outputFileName, alias, workersList, includeModulesList, includeFilesList, ignoreDependencies){
 
     alias = alias || {};
     workersList = workersList || [];
@@ -455,7 +457,7 @@ module.exports = {
 
     var packageId = packageInfo.package.name;
     // if(process.env.verbose) console.log('  package info ('+packageRoot+'): ', packageInfo);
-    var deps = getDependencies(packageInfo);
+    var deps = !ignoreDependencies? getDependencies(packageInfo) : [];
 
     getAliasFor(packageInfo, packageRoot, alias);
     getWorkerListFor(packageInfo, packageRoot, workersList);
