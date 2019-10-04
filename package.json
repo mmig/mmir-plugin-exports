@@ -1,6 +1,6 @@
 {
   "name": "mmir-plugin-exports",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "generate module-ids.gen.js and module-cofig.gen.js for mmir-plugins",
   "main": "export-main.js",
   "scripts": {
@@ -25,8 +25,8 @@
     "esprima": "^4.0.1",
     "meow": "^5.0.0",
     "path-parse": "^1.0.6",
-    "read-pkg-up": "^6.0.0",
-    "typescript": "^3.5.3"
+    "read-pkg-up": "^7.0.0",
+    "typescript": "^3.6.3"
   },
   "devDependencies": {
     "@types/esprima": "^4.0.2",

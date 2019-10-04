@@ -1,8 +1,9 @@
 
 var esprima = require('esprima');
-var readPackage = require('read-pkg-up');
 var fs = require('fs');
 var path = require('path');
+
+var getPackageInfo = require('./package-utils.js').getPackageInfo;
 
 
 var templateExportName = '/*exported-name*/';
@@ -53,10 +54,6 @@ var templatePath = path.resolve(__dirname, 'res');
 var wrapTemplateName = 'compat-wrap-template.js';
 
 var compatTemplateWrapper = loadTemplate(wrapTemplateName);
-
-function getPackageInfo(forPackageDir){
-  return readPackage.sync({cwd: forPackageDir});
-}
 
 function loadTemplate(templateFile){
   // try {

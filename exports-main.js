@@ -2,9 +2,9 @@
 var fs = require('fs');
 var path = require('path');
 
-var readPackage = require('read-pkg-up');
-
 var fileUtils = require('./file-utils.js');
+
+var getPackageInfo = require('./package-utils.js').getPackageInfo;
 
 //default sub-dir name (in directories entry) for whichs' files alias entries will be created
 var srcDirName = 'lib';
@@ -124,10 +124,6 @@ function resolvePaths(root, dirList, recursively){
       dirList.push(d);
     });
   }
-}
-
-function getPackageInfo(forPackageDir){
-  return readPackage.sync({cwd: forPackageDir});
 }
 
 function getAliasFor(packageInfo, rootPath, alias){
@@ -405,7 +401,7 @@ function getDependencies(packageInfo, list, set){
         list.push(info);
         set.add(pkg.name);
       } else if(process.env.verbose){
-        console.log('  export-utils: ignoreing dependency (was already added) for '+pkg.name+', located at ', info.path);//DEBUG
+        console.log('  export-utils: ignoring dependency (was already added) for '+pkg.name+', located at ', info.path);//DEBUG
       }
       getDependencies(info, list, set);
     }
