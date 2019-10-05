@@ -89,7 +89,7 @@ function getDoc(node, indent, includeDefaultValues){
     var text = node.jsDoc.map(function(entry){
       if(includeDefaultValues){
         var defVal = getDefaultValue(entry);
-        if(defVal){
+        if(typeof defVal !== 'undefined'){
           defaultValues.push({name: node.name.getText(),value: defVal});
         }
       }
