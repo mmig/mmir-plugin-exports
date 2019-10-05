@@ -1,7 +1,7 @@
 # Plugin Exports
 
 [![MIT license](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-![GitHub package.json version](https://img.shields.io/github/package-json/v/mmig/mmir-plugin-exports)
+[![GitHub package.json version](https://img.shields.io/github/package-json/v/mmig/mmir-plugin-exports/master)](https://github.com/mmig/mmir-plugin-exports)
 [![npm](https://img.shields.io/npm/v/mmir-plugin-exports)](https://www.npmjs.com/package/mmir-plugin-exports)
 [![API](https://img.shields.io/badge/docs-API%20reference-orange.svg?style=flat)](https://mmig.github.io/mmir/api)
 [![Guides](https://img.shields.io/badge/docs-guides-orange.svg?style=flat)](https://github.com/mmig/mmir/wiki)
