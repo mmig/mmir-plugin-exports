@@ -4,12 +4,15 @@ const path = require('path');
 const ts = require('typescript');
 
 const configCodeUtil = require('./config-gen.js');
+const fileUtils = require('./file-utils.js');
 
 const MODULE_CONFIG_INTERFACE_FILE = 'config.d.ts';
+const BUILD_CONFIG_FILE = 'build-config.ts';
 
 const reMainConfigInterface = /PluginConfig$/;
 const reSpeechConfigInterface = /PluginSpeechConfigEntry$/;
 const reConfigInterface = /PluginConfigEntry$/;
+const reAppConfigType = /^AppConfig$/;
 const mainInterfaceKey = '_main';
 
 const PropertyKind = 'PropertySignature';
@@ -17,6 +20,8 @@ const InterfaceKind = 'InterfaceDeclaration';
 const EnumKind = 'EnumDeclaration';
 const EnumValueKind = 'EnumMember';
 const UnionTypeKind = 'UnionType';
+const VariableKind = 'VariableDeclaration';
+const ExportKind = 'ExportKeyword';
 
 function getKind(node){
   return ts.SyntaxKind[node.kind];
@@ -306,10 +311,42 @@ function createConfigInfo(ast){
   });
 
   interfaces.forEach(function(interf){
-    console.log('WARNING ignored interface declaratoin for ', interf.typeName.getText());
+    console.log('WARNING ignored interface declaration for ', interf.typeName? interf.typeName.getText() : interf);
   });
 
   return configInfo;
+}
+
+function getBuildConfigs(ast){
+
+  var buildConfigs = [];
+  ts.forEachChild(ast, function(node){
+
+    var isExport = false;
+    if(Array.isArray(node.modifiers) && node.modifiers.length > 0){
+      node.modifiers.forEach(function(node){
+        if(getKind(node) === ExportKind){
+          isExport = true;
+        }
+      });
+    }
+
+    if(!isExport){
+      return;
+    }
+
+    if(node.declarationList && Array.isArray(node.declarationList.declarations) && node.declarationList.declarations.length > 0){
+      node.declarationList.declarations.forEach(function(node){
+
+        if(getKind(node) === VariableKind && reAppConfigType.test(node.type.getText()) && node.initializer){
+          buildConfigs.push(node.initializer.getText());
+        }
+      });
+    }
+
+  });
+
+  return buildConfigs;
 }
 
 module.exports = {
@@ -317,11 +354,21 @@ module.exports = {
   parseFile: parseFile,
   createConfigsInfo: createConfigInfo,
 
-  createModuleConfigs: function(packageRootDir, outputFileName, moduleConfigDFile){
+  createModuleConfigs: function(packageRootDir, outputFileName, moduleConfigDFile, buildConfigFile){
     moduleConfigDFile = moduleConfigDFile || MODULE_CONFIG_INTERFACE_FILE;
+    buildConfigFile = buildConfigFile || BUILD_CONFIG_FILE;
 
     var ast = parseFile(packageRootDir, moduleConfigDFile);
     var configInfo = createConfigInfo(ast, moduleConfigDFile);
+
+    if(fileUtils.exists(packageRootDir, buildConfigFile)){
+      var astBuildConfig = parseFile(packageRootDir, buildConfigFile);
+      var buildConfigs = getBuildConfigs(astBuildConfig);
+      // console.log(buildConfigs);
+      if(buildConfigs.length > 0){
+        configInfo.buildConfigs = buildConfigs;
+      }
+    }
 
     var code = configCodeUtil.generateCode(configInfo);
     return configCodeUtil.writeToFile(packageRootDir, code, outputFileName);

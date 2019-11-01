@@ -45,14 +45,14 @@ parses the `config.d.ts` of a plugin and
  * exports the properties (name) of `[.*]PluginConfig` interface as `pluginName`:  
    `export interface SomeNamePluginConfig { <the plugin config name>: <the config entry type>; }`
    * if there is only one property specified, the generated module will represent a single plugin, e.g.
-     ```
+     ```javascript
      pluginName: "someName",
      config: [
        ...
      ```
    * if multiple properties are declared, the generated module's `pluginName` will be an array
      and an additional field `plugins` will hold the corresponding plugin information, e.g.
-     ```
+     ```javascript
      pluginName: ["pl1", "pl2"],
      plugins: {
        pl1: {
@@ -61,7 +61,7 @@ parses the `config.d.ts` of a plugin and
            ...
      ```
    * the properties' type will be used as "main" entry point for creating the config-list, e.g.
-     ```
+     ```typescript
        somePluginName: SomePluginConfigEntry;
        ...
      }
@@ -70,12 +70,12 @@ parses the `config.d.ts` of a plugin and
      }
      ```
      ->
-     ```
+     ```javascript
      pluginName: "somePluginName",
      config: ["someConfig"],
      ```
    * optionally, if relevant for the plugin, the SpeechConfig entry is specified by adding it as Union type:
-    ```
+    ```typescript
       somePluginName: SomePluginConfigEntry | SomePluginSpeechConfigEntry;
       ...
     }
@@ -85,13 +85,13 @@ parses the `config.d.ts` of a plugin and
     }
     ```
     ->
-    ```
+    ```javascript
     pluginName: "somePluginName",
     config: ...,
     speechConfig: ["someSpeechConfig"],
     ```
     * if configuration-properties (or speech-configuration) have JSDoc `@default` values specified, they will be included in the property `defaultValues` (NOTE the default value must be `JSON.parse`'able or simple string):
-     ```
+     ```typescript
        somePluginName: SomePluginConfigEntry | SomePluginSpeechConfigEntry;
        ...
      }
@@ -106,7 +106,7 @@ parses the `config.d.ts` of a plugin and
      }
      ```
      ->
-     ```
+     ```javascript
      pluginName: "somePluginName",
      config: [/** <js-doc> */"someConfig"],
      speechConfig: [/** <js-doc> */"someSpeechNumConfig"],
@@ -127,6 +127,50 @@ parses the `config.d.ts` of a plugin and
    * `config`: the custom plugin-configuration for the configuration entry of `MediaManager.plugins.env`
 
 NOTE all interfaces etc. must be defined in the root of `config.d.ts`
+
+
+In addition, if it exists, 'pluginexport' parses the build-configuration file `build-config.ts` and collects all `export`ed
+variables of type `AppConfig` (type from module `mmir-tooling`) into a list and stores it into field `buildConfigs`.
+
+For example:
+   ```typescript
+   import { AppConfig } from 'mmir-tooling';
+   export const buildConfig: AppConfig = {
+     states: {
+       models: {
+         myStateModel: {
+           moduleId: 'mmirf/myCustomStateModel',
+           file: __dirname + '/states/my-model.xml'
+         },
+         myOtherModel: {
+           moduleId: 'mmirf/otherCustomStateModel',
+           file: __dirname + '/states/my-other-model.xml'
+         },
+       }
+     }
+   };
+   ```
+   ->
+   ```javascript
+   buildConfigs: [
+     {
+       states: {
+         models: {
+           myStateModel: {
+             moduleId: 'mmirf/myCustomStateModel',
+             file: __dirname + '/states/my-model.xml'
+           },
+           myOtherModel: {
+             moduleId: 'mmirf/otherCustomStateModel',
+             file: __dirname + '/states/my-other-model.xml'
+           },
+         }
+       }
+     }
+   ]
+   ```
+
+NOTE 1: build-configuration parsing only considers `AppConfig` variables that are immediately initialized.
 
 ## Creating Compatibility Modules
 

@@ -69,6 +69,21 @@ function generateConfig(config, configDocs, indent, isSpeechConfig){
   return code;
 }
 
+function generateBuildConfigs(buildConfigs, indent){
+
+  var indentStr = new Array(indent + 1).join(' ');
+
+  var code = '';
+  code += indentStr + 'buildConfigs: [\n';
+  buildConfigs.forEach(function(b){
+    code += indentStr + '  '+b.replace(/\r?\n/igm, '\n  '+indentStr)+',\n'
+  });
+  code = code.replace(/,\n$/, '\n');
+  code += indentStr + '],\n';
+
+  return code;
+}
+
 /**
  *
  * @param  {ConfigInfo} configInfo the config-info object:
@@ -179,6 +194,10 @@ function doGenerateConfigsCode(configInfo, indent){
 
   if(configInfo.speechSubConfig){
     code += generateSubConfig(configInfo.speechSubConfig, indent, 'speechSubConfig');
+  }
+
+  if(configInfo.buildConfigs){
+    code += generateBuildConfigs(configInfo.buildConfigs, indent);
   }
 
   return code;

@@ -53,8 +53,14 @@ function isDirectory(filePath){
   return fs.lstatSync(filePath).isDirectory();
 }
 
+function exists(){
+  var fpath = path.resolve.apply(path, arguments);
+  return fs.existsSync(fpath);
+}
+
 module.exports = {
   isDirectory: isDirectory,
+  exists: exists,
   storeToFile: storeToFile,
   fileHeader: HEADER
 }
