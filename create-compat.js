@@ -50,7 +50,7 @@ var pluginTemplates = {
   }
 }
 
-var templatePath = path.resolve(__dirname, 'res');
+var templatePath = path.resolve(__dirname, 'res', 'templates');
 var wrapTemplateName = 'compat-wrap-template.js';
 
 var compatTemplateWrapper = loadTemplate(wrapTemplateName);
