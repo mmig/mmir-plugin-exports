@@ -185,3 +185,75 @@ parses the `package.json` of the plugin and
      * type: the module type, one of "media" | "asr" | "tts" | "custom" (DEFAULT: "media")
      * exportedName: if type is "custom", the name for the (global) variable must be specified, to which the module will be exported
   * example: `mmir.compat = {"./www/recorderExt.js": {"file": "./res/recorderExtCompat.js", "type": "custom", "exportedName": "Recorder"}}`
+
+## Cordova Helper Scripts for MODE
+
+The helper scripts will add support for cordova configuration/variable entry `MMIR_PLUGIN_MODE`
+(in plugin's `plugin.xml` or the using project's `config.xml`), for using `mode` dependent
+implementation files.
+
+Supported modes are
+ * "normal": the default implementation
+ * "compat": the compatibility implementation file(s)
+ * "wepack": special modus for `webpack` driven builds:  
+   if webpack includes the implementation files during the build process,
+   empty webpack-mode files can be added, to avoid including duplicate/unused
+   source files.
+
+For example, a plugin may specify in its `plugin.xml`
+```xml
+    <!-- MMIR_PLUGIN_MODE: "normal" | "compat" | "webpack" -->
+    <preference name="MMIR_PLUGIN_MODE" default="normal" />
+    <hook src="res/js/before_plugin_install_hook.js" type="before_plugin_install" />
+```
+
+When the cordova plugin is installed, it will read the `compat`-configuration of the plugin's `package.json` in custom field `"mmir"`, e.g.
+```json
+"mmir": {
+  "compat": {
+    "./www/myImpl.js": {
+      "file": "./www/alt/myImplCompat.js",
+      "type": "asr"
+    }
+  }
+},
+```
+and use its source- and target-directory for applying the `webpack` or `compat` mode:
+for any file of the source directory for which a file with suffix `Webpack` (for `webpack` mode), or `Compat` (for `compat` mode), the replacement
+file will be used in case the corresponding mode is activated.
+
+In the example above, the source directory would be "./www" and the target directory
+where the mode-files need to be located, would be at "./www/alt".
+
+A specific mode can be activated in various ways:
+
+  * as variable via a preference-tag in the plugin's `plugin.xml` (i.e. setting the default mode):
+    ```xml
+    <variable name="MMIR_PLUGIN_MODE" value="normal" />
+    ```
+  * via command-line arguement when installing the plugin:
+    ```bash
+    cordova plugin add ... --variable MMIR_PLUGIN_MODE=webpack
+    ```
+  * by a preference-tag in the using-project's `config.xml`:
+    ```xml
+    <preference name="MMIR_PLUGIN_MODE" value="webpack" />
+    ```
+    NOTE if the preference-tag is added to `config.xml` before installing/adding
+         the cordova plugin, the command-line argument can be omitted
+
+
+### Install / Copy Scripts into Plugin
+
+after addring entry into `package.json`:
+```json
+"scripts": {
+  "install-cordova-scripts": "copycordovascripts res/js"
+}
+```
+
+running the command:
+```bash
+npm run install-cordova-scripts
+```
+will copy the cordova helper scripts into the plugin's sub-directory `res/js/`.

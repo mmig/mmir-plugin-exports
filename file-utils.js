@@ -58,9 +58,50 @@ function exists(){
   return fs.existsSync(fpath);
 }
 
+/**
+ * copy files (non-recursively) from srcDir to targetDir
+ * @param  {string} srcDir the source directory which's files will be copied
+ * @param  {string} targetDir the target directory (must exist)
+ * @param  {Function} [callback] OPTIONAL will be invoked after copying completed: callback(err: Error|null)
+ * @param  {RegExpr} [filterRegExp] OPTIONAL if specified, only files that match the filter (with their file-name incl. extension) will be copied
+ */
+function copyFiles(srcDir, targetDir, callback, filterRegExp){
+
+  fs.readdir(srcDir, function(err, files){
+    if(err){
+      if(process.env.verbose) console.log('  exports-file-util.copyFiles: ERROR copying files, could not read source directory '+srcDir+': ', err);
+      return callback && callback(err);
+    }
+    var count = files.length;
+    if(count === 0) callback && callback(null);
+    files.forEach(function(f){
+      if(filterRegExp && !filterRegExp.test(f)){
+        --count;
+        if(process.env.verbose) console.log('  exports-file-util.copyFiles: ignoring file '+f+' -> ', targetDir);
+        if(count === 0){
+          callback && callback(null);
+        }
+        return;
+      }
+      if(process.env.verbose) console.log('  exports-file-util.copyFiles: copying '+f+' -> ', targetDir);
+      fs.copyFile(path.join(srcDir, f), path.join(targetDir, f), function(err){
+        --count;
+        if(err){
+          if(process.env.verbose) console.log('  exports-file-util.copyFiles: ERROR copying '+f+': ', err);
+          return callback && callback(err);
+        }
+        if(count === 0){
+          callback && callback(null);
+        }
+      })
+    });
+  })
+}
+
 module.exports = {
   isDirectory: isDirectory,
   exists: exists,
   storeToFile: storeToFile,
-  fileHeader: HEADER
+  fileHeader: HEADER,
+  copyFiles: copyFiles
 }

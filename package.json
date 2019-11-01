@@ -8,7 +8,8 @@
   },
   "bin": {
     "pluginexport": "./bin/cli.js",
-    "createplugincompat": "./bin/compat-cli.js"
+    "createplugincompat": "./bin/compat-cli.js",
+    "copycordovascripts": "./bin/copy-cordova-scripts.js"
   },
   "repository": {
     "type": "git",
