@@ -186,6 +186,28 @@ parses the `package.json` of the plugin and
      * exportedName: if type is "custom", the name for the (global) variable must be specified, to which the module will be exported
   * example: `mmir.compat = {"./www/recorderExt.js": {"file": "./res/recorderExtCompat.js", "type": "custom", "exportedName": "Recorder"}}`
 
+## Creating Compatibility Typings
+
+running `dtsdownlevel <dir>` will create backwards compatible typings `*.d.ts` for use in projects that use `typescript` <= 3.5.
+
+By default, the `dtsdownlevel` script will copy the unmodified typings to `<dir>/ts3.6`, which can be made available in
+a backwards compatible way, by adding an entry to the `package.json` file, e.g. for the input typings directory `lib`:
+```
+  "typesVersions": {
+    ">=3.6": {
+      "lib/*": [
+        "lib/ts3.6/*"
+      ]
+    }
+  },
+```
+
+The option `--dir <out-dir>` allows to specify a custom output directory:  
+`dtsdownlevel <dir> --dir <out-dir>`
+
+NOTE: do not run the `dtsdownlevel` script multiple times, without recompiling the typings before, since
+      that would result in copying the "downleveled" typings to the `<dir>/ts3.6` directory!
+
 ## Cordova Helper Scripts for MODE
 
 The helper scripts will add support for cordova configuration/variable entry `MMIR_PLUGIN_MODE`

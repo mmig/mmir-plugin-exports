@@ -9,7 +9,8 @@
   "bin": {
     "pluginexport": "./bin/cli.js",
     "createplugincompat": "./bin/compat-cli.js",
-    "copycordovascripts": "./bin/copy-cordova-scripts.js"
+    "copycordovascripts": "./bin/copy-cordova-scripts.js",
+    "dtsdownlevel": "./bin/downlevel-dts-cli.js"
   },
   "repository": {
     "type": "git",
@@ -24,14 +25,16 @@
   "license": "MIT",
   "dependencies": {
     "esprima": "^4.0.1",
-    "meow": "^5.0.0",
+    "fs-extra": "^8.1.0",
+    "meow": "^6.0.0",
     "path-parse": "^1.0.6",
-    "read-pkg-up": "^7.0.0",
-    "typescript": "^3.6.3"
+    "read-pkg-up": "^7.0.1",
+    "ts-morph": "^6.0.2",
+    "typescript": "^3.7.5"
   },
   "devDependencies": {
     "@types/esprima": "^4.0.2",
-    "@types/meow": "^5.0.0",
+    "@types/fs-extra": "^8.0.1",
     "@types/path-parse": "^1.0.19"
   }
 }
