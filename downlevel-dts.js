@@ -17,6 +17,9 @@ function dtsDownlevel(dtsInputDir, outputDirName) {
   const project = new Project()
   const inputDir = project.addDirectoryAtPath(inputPath)
 
+  const outDir = path.resolve(inputDir.getPath().toString(), outputDirName);
+  fs.removeSync(outDir)
+
   const tmpDir = createTempDir()
   fs.copySync(inputPath, tmpDir, {filter: function(src){
     if(futil.isDirectory(src) || /\.d\.ts$/i.test(src)){
@@ -36,10 +39,7 @@ function dtsDownlevel(dtsInputDir, outputDirName) {
   }
   project.saveSync()
 
-  const outDir = path.resolve(inputDir.getPath().toString(), outputDirName);
-  fs.removeSync(outDir)
   fs.moveSync(tmpDir, outDir)
-
   if(process.env.verbose) console.log('    moved unmodified dts files from temporary dir to '+outDir)
 }
 
