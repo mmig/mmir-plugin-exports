@@ -44,12 +44,12 @@ var cli = meow(`
     exported: {
       type: 'string',
       alias: 'e',
-      default: void(0)
+      default: ''
     },
     file: {
       type: 'string',
       alias: 'f',
-      default: void(0)
+      default: ''
     },
     verbose: {
       type: 'boolean',
@@ -76,7 +76,7 @@ try {
   var input = cli.input[0];
   var result = futil.isDirectory(input)?
                     createCompat.createCompatForAll(input) :
-                    createCompat.createCompatFor(input, cli.flags.file, createCompat.templates[cli.flags.type], {exportedName: cli.flags.exported});
+                    createCompat.createCompatFor(input, cli.flags.file, createCompat.templates[cli.flags.type], {exportedName: cli.flags.exported || void(0)});
 
   console.log('  created file(s) ' + (Array.isArray(result)? result.join('\n                  ') : result));
 
@@ -84,7 +84,7 @@ try {
 
   console.error(`
   An Error occurred for:
-    ${appName} ${cli.input.join(' ')} -f ${cli.flags.file} -t ${cli.flags.type} -e ${cli.flags.exported}
+    ${appName} ${cli.input.join(' ')} -f ${cli.flags.file} -t ${cli.flags.type} -e ${cli.flags.exported || void(0)}
 
   Is the file path correct?`);
 

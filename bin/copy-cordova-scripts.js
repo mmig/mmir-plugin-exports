@@ -37,7 +37,7 @@ var cli = meow(`
     filter: {
       type: 'string',
       alias: 'f',
-      default: void(0)
+      default: ''
     },
     verbose: {
       type: 'boolean',
@@ -72,7 +72,7 @@ try {
     process.exit(2);
   }
 
-  var filter = cli.flags.filter;
+  var filter = cli.flags.filter || void(0);
   var re;
   if(filter){
     try {
@@ -96,7 +96,7 @@ try {
 
   console.error(`
   An Error occurred for:
-    ${appName} ${cli.input.join(' ')} -s ${cli.flags.source} -f ${cli.flags.filter}
+    ${appName} ${cli.input.join(' ')} -s ${cli.flags.source} -f ${cli.flags.filter || void(0)}
 
   Is the path to the target directory correct?`);
 
