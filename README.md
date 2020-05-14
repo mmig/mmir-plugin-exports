@@ -131,6 +131,7 @@ NOTE all interfaces etc. must be defined in the root of `config.d.ts`
 
 In addition, if it exists, 'pluginexport' parses the build-configuration file `build-config.ts` and collects all `export`ed
 variables of type `AppConfig` (type from module `mmir-tooling`) into a list and stores it into field `buildConfigs`.
+_(In addition, exported variables which's type end with `AppConfig` are also collected into the field `buildConfigs`, e.g. `SomeAppConfig`)_
 
 For example:
    ```typescript
