@@ -25,16 +25,16 @@
   "license": "MIT",
   "dependencies": {
     "esprima": "^4.0.1",
-    "fs-extra": "^8.1.0",
-    "meow": "^6.0.0",
+    "fs-extra": "^9.0.1",
+    "meow": "^7.0.1",
     "path-parse": "^1.0.6",
     "read-pkg-up": "^7.0.1",
-    "ts-morph": "^6.0.2",
-    "typescript": "^3.7.5"
+    "ts-morph": "^7.1.2",
+    "typescript": "^3.9.5"
   },
   "devDependencies": {
     "@types/esprima": "^4.0.2",
-    "@types/fs-extra": "^8.0.1",
+    "@types/fs-extra": "^9.0.1",
     "@types/path-parse": "^1.0.19"
   }
 }
