@@ -55,11 +55,76 @@ function processProjectDir(inputDir) {
   const files = inputDir.addSourceFilesAtPaths("*.d.ts")
   for (const f of files) {
     if(process.env.verbose) console.log('      processing dts file '+f.getFilePath()+'...')
+    downlevelTS38(f)
     downlevelTS36(f)
     downlevelTS34(f)
     // Original file will be overwritten by down-leveled file when saved
   }
 }
+
+
+/**
+ * Down-level TypeScript 3.8 types in the given source file
+ */
+function downlevelTS38(f) {
+  // convert "import type" to "import"
+
+  //FIXME ts-morph does not return "import type" statements, only "import" statements for these
+  //      -> when this is fixed, should use these, then filter imp.isTypeOnly() and change via imp.setIsTypeOnly(false)
+  // const imps = f.getImportDeclarations();
+  // const imps = f.getDescendantsOfKind(ts.SyntaxKind.ImportDeclaration);
+  // for (const imp of imps) {
+    // if(imp.isTypeOnly()) imp.setIsTypeOnly(false);
+  // }
+
+  const imps = f.getDescendantsOfKind(ts.SyntaxKind.ImportEqualsDeclaration);
+  if(!imps || imps.length === 0){
+    return;
+  }
+
+  //HACK ts-morph does not return "import type" when querying f.getDescendantsOfKind(ts.SyntaxKind.ImportDeclaration)
+  //     AND the structure for "import type" is plain text
+  //QUICK FIX "hard code" the transformation by rewriting the strings in the returned structure statement property
+  // console.log(imp.print())
+  // imp.replaceWithText('import')
+  const imp = imps[0];//<- take only the first one (the HACK will process all in the file)
+  // console.log(f.getFilePath(), imp.getText(), imp.getParent().getStructure())
+  if(imp.getParent().getStructure().statements){
+    var p = imp.getParent();
+    var str = imp.getParent().getStructure();
+    //NOTE: if the string statements are not collected, they get later joined with new-lines, so collect them now manually and join with space char
+    var conv = {};
+    var i = 0;
+    var isActive = false;
+    str.statements = str.statements.filter(function(s){
+      if(typeof s === 'string'){
+        var isType = /^\s*import\s+type\s*$/.test(s);
+        if(isType && isActive){
+          ++i;
+        }
+        var sb = conv[i] || [];
+        if(!conv[i]){
+          conv[i] = sb;
+          isActive = false;
+        }
+        sb.push(isType? 'import' : s);//convert "import type" to "import"
+        if(!isActive){
+          isActive = true;
+          return true;
+        }
+        return false;
+      }
+      return true;
+    });
+    i = 0;
+    str.statements = str.statements.map(function(s){
+      return typeof s === 'string'? conv[i++].join(' ') : s;
+    });
+    // console.log(str.statements)
+    p.set(str);
+  }
+}
+
 
 /**
  * Down-level TypeScript 3.6 types in the given source file
