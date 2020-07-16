@@ -189,13 +189,14 @@ parses the `package.json` of the plugin and
 
 ## Creating Compatibility Typings
 
-running `dtsdownlevel <dir>` will create backwards compatible typings `*.d.ts` for use in projects that use `typescript` <= 3.5.
+running `dtsdownlevel <dir>` will create backwards compatible typings `*.d.ts` for use in projects that use `typescript` < 3.8
+(the targeted compatiblity level is `typescript` version 3.5).
 
-By default, the `dtsdownlevel` script will copy the unmodified typings to `<dir>/ts3.6`, which can be made available in
-a backwards compatible way, by adding an entry to the `package.json` file, e.g. for the input typings directory `lib`:
+By default, the `dtsdownlevel` script will copy the downleveled typings to `<dir>/ts3.6`, which can be made available for
+backwards compatibility, by adding an entry to the `package.json` file, e.g. for the input typings directory `lib`:
 ```
   "typesVersions": {
-    ">=3.6": {
+    "<3.8": {
       "lib/*": [
         "lib/ts3.6/*"
       ]
@@ -203,11 +204,13 @@ a backwards compatible way, by adding an entry to the `package.json` file, e.g. 
   },
 ```
 
-The option `--dir <out-dir>` allows to specify a custom output directory:  
+The option `--dir <out-dir>` allows to specify a custom output directory (as a subdirectory of the input  `<dir>`):  
 `dtsdownlevel <dir> --dir <out-dir>`
 
-NOTE: do not run the `dtsdownlevel` script multiple times, without recompiling the typings before, since
-      that would result in copying the "downleveled" typings to the `<dir>/ts3.6` directory!
+By default, the `dtsdownlevel` will abort, if the targeted `<out-dir>` is not empty.
+Using the `--force` flag will empty the `<out-dir>`, i.e. force writing to the directory,
+even if it is not empty.
+
 
 ## Cordova Helper Scripts for MODE
 

@@ -2,8 +2,9 @@
 
 var meow = require('meow');
 var path = require('path');
+var fs = require('fs-extra');
 
-var downlevel = require('../downlevel-dts.js');
+var downlevel = require('downlevel-dts');
 var futil = require('../file-utils.js');
 var putil = require('../package-utils');
 
@@ -17,8 +18,11 @@ var cli = meow(`
 
   Options
     --dir, -d      the sub-directory name within the typings directory
-                   for the not-downleveled typings (i.e. typescript >= 3.6)
+                   for the downleveled typings (i.e. targeting typescript < 3.8)
                     DEFAULT: ${defaultTs36Dir}
+    --force, -f   force writing to the target typings directory
+                  (will clear the target directory before writing to it)
+                    DEFAULT: false
     --help         show usage information
     --verbose, -v  show additional information
                     DEFAULT: false
@@ -32,6 +36,11 @@ var cli = meow(`
       type: 'string',
       alias: 'd',
       default: defaultTs36Dir
+    },
+    force: {
+      type: 'boolean',
+      alias: 'f',
+      default: false
     },
     verbose: {
       type: 'boolean',
@@ -53,33 +62,53 @@ if(cli.flags.verbose){
 }
 
 var input = cli.input[0];
-if(!futil.isDirectory(input)){
-  console.log('ERROR: not a directory at '+ input);
+var absInput = path.resolve(input);
+if(!futil.isDirectory(absInput)){
+  console.log('ERROR: not a directory at '+ absInput);
   cli.showHelp();
   return;
 }
 
-var out = cli.flags.dir;
-var outDir = path.resolve(input, out);
-if(futil.exists(outDir) && !futil.isDirectory(outDir)){
-  console.log('ERROR: output directory is not a directory at '+ outDir);
-  cli.showHelp();
-  return;
+var out = path.join(input, cli.flags.dir);
+var absOut = path.resolve(out);
+if(futil.exists(absOut)){
+  if(!futil.isDirectory(absOut)){
+    console.log('ERROR: output directory is not a directory at '+ absOut);
+    cli.showHelp();
+    return;
+  }
+  if(fs.readdirSync(absOut).length > 0){
+    if(cli.flags.force){
+      fs.emptyDirSync(absOut);
+    }
+    else {
+      console.log('ERROR: output directory is not empty, use --force for clearing target dirctory at '+ absOut);
+      cli.showHelp();
+      return;
+    }
+  }
 }
+
+
+var relInput = path.isAbsolute(input)? path.relative(path.resolve('./'), input) : input;
+
+//NOTE need to use relative out-dir otherwise downlevel-dts will resolve to an out-dir parallel to the input dir
+var relOut = path.join(relInput, path.relative(absInput, absOut));
 
 try {
 
-  downlevel.dtsDownlevel(input, out);
-  console.log('  created dts compatibility file(s) at ' + input);
-  console.log('  copied unmodified dts file(s) to     ' + outDir);
+  downlevel.main(absInput, relOut);
+  console.log('  unmodified dts file(s) at            ' + absInput);
+  console.log('  created dts compatibility file(s) at ' + absOut);
 
   var pkgPath = path.dirname(putil.getPackageInfo(input).path);
-  var relDir = path.relative(pkgPath, input).replace(/\\/g, '/');
+  var relDir = path.relative(pkgPath, absInput).replace(/\\/g, '/');
+  var pkgOutDir = path.relative(pkgPath, absOut).replace(/\\/g, '/');
   console.log('\n  for backwards compatibility add entry to package.json:');
   console.log('  "typesVersions": {\n\
-    ">=3.6": {\n\
+    "<3.8": {\n\
       "'+relDir+'/*": [\n\
-        "'+relDir+'/'+out+'/*"\n\
+        "'+pkgOutDir+'/*"\n\
       ]\n\
     }\n\
   },');
