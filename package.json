@@ -1,6 +1,6 @@
 {
   "name": "mmir-plugin-exports",
-  "version": "1.5.0",
+  "version": "2.0.0-rc.1",
   "description": "generate module-ids.gen.js and module-cofig.gen.js for mmir-plugins",
   "main": "export-main.js",
   "scripts": {
