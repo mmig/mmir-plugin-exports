@@ -3,6 +3,8 @@
 // Based on downlevel-dts (MIT licensed) by Nathan Shively-Sanders
 // https://github.com/sandersn/downlevel-dts/blob/e7d1cb5aced5686826fe8aac4d4af2f745a9ef60/index.js
 
+// IMPORTANT this script requires ts-morph version >= 6 < 7
+
 /* eslint-env node */
 
 const {Project, ts} = require("ts-morph")
