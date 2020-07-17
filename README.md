@@ -268,10 +268,9 @@ A specific mode can be activated in various ways:
     NOTE if the preference-tag is added to `config.xml` before installing/adding
          the cordova plugin, the command-line argument can be omitted
 
-
 ### Install / Copy Scripts into Plugin
 
-after addring entry into `package.json`:
+after adding entry into `package.json`:
 ```json
 "scripts": {
   "install-cordova-scripts": "copycordovascripts res/js"
@@ -283,3 +282,37 @@ running the command:
 npm run install-cordova-scripts
 ```
 will copy the cordova helper scripts into the plugin's sub-directory `res/js/`.
+
+
+### Update `version` Field in `npm` and `cordova` Configuration Files
+
+The script
+```bash
+updateversion <directory> --set-version <version>
+```
+allows to update the version in `npm` and `cordova` configuration files without
+reformatting the files.
+
+The target directory will be scanned for the following configuration files:
+ * `package.json`
+ * `package-lock.json` _(needs to explicitly enabled with flag `--enable-package-lock`)_
+ * `config.xml` (`cordova` app project configuration)
+ * `plugin.xml` (`cordova` plugin project configuration)
+
+Updating for specific files can be disabled by `--disable-<package | config | plugin>`.
+
+If no version is specified with `--set-version <version>`, the version is read from
+`package.json` by default, and the other configuration files are updated with it.
+
+Alternatively, the version can be read from another configuration file using
+`--from-<package | config | plugin>`.
+
+For conveinance, the script can be added to the `package.json` after installing
+the package, e.g. the following will update the version that is read from the
+`package.json` file, and will update all supported configuration files (inlcuding
+`package-lock.json`), except for the `plugin.xml` file:
+```json
+"scripts": {
+  "update-version": "updateversion ./ --enable-package-lock --disable-plugin"
+}
+```
