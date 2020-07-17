@@ -10,7 +10,8 @@
     "pluginexport": "./bin/cli.js",
     "createplugincompat": "./bin/compat-cli.js",
     "copycordovascripts": "./bin/copy-cordova-scripts.js",
-    "dtsdownlevel": "./bin/downlevel-dts-cli.js"
+    "dtsdownlevel": "./bin/downlevel-dts-cli.js",
+    "updateversion": "./bin/update-version-cli.js"
   },
   "repository": {
     "type": "git",
@@ -19,7 +20,8 @@
   "keywords": [
     "mmir",
     "plugin",
-    "metadata"
+    "metadata",
+    "export tools"
   ],
   "author": "russa",
   "license": "MIT",
@@ -27,9 +29,11 @@
     "downlevel-dts": "^0.5.0",
     "esprima": "^4.0.1",
     "fs-extra": "^9.0.1",
+    "jsonlint-pos": "^2.1.0",
     "meow": "^7.0.1",
     "path-parse": "^1.0.6",
     "read-pkg-up": "^7.0.1",
+    "sax-wasm": "^1.4.6",
     "typescript": "^3.9.5"
   },
   "devDependencies": {
