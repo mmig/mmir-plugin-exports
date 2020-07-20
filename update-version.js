@@ -157,8 +157,9 @@ function updateVersion(target, opts, cb){
  *
  */
 function loadConfigFiles(dirPath, cb, filterOrList, isExludeFilter){
-  const fileList = Array.isArray(filterOrList)? filterOrList : configFiles.filter(function(cf){
-    return _exists(dirPath, cf, filterOrList, isExludeFilter);
+  const isList = Array.isArray(filterOrList);
+  const fileList = (isList? filterOrList : configFiles).filter(function(cf){
+    return _exists(dirPath, cf, isList? null : filterOrList, isExludeFilter);
   });
   const tasks = fileList.map(function(cf){
     const p = path.resolve(dirPath, cf);
