@@ -78,8 +78,8 @@ function createAttrPosFinderFunc(_tagName, attrName, positionList, options){
     console.log('[WARN] jsonParser::createAttrPosFinderFunc(): argument tagName is not supported!');
   }
   const breadthFirst = options && options.breadthFirst;
+  const onlyFirst = options && options.onlyFirst;
   function traverse(elem, res, _this){
-
 
     if(elem && typeof elem === 'object'){
 
@@ -87,33 +87,51 @@ function createAttrPosFinderFunc(_tagName, attrName, positionList, options){
 
       if(Array.isArray(elem)){
 
-        elem.forEach(function(item){
-          traverse(item, res, _this);
-        });
+        var item;
+        for(var i=0, size=elem.length; i < size; ++i){
+          item = elem[i];
+          if(!traverse(item, res, _this)){
+            return false;//<- indicate abort
+          }
+        }
 
       } else {
 
-        var children = breadthFirst? [] : null;
-        Object.keys(elem).forEach(function(fieldName){
-          if(fieldName === _this._options.posField){
-            return;
+        var children = breadthFirst? [] : null, names = Object.keys(elem), fieldName, val, posList;
+        for(var i=0, size=names.length; i < size; ++i){
+          fieldName = names[i];
+          if(fieldName === _this._options.posField){//ignore pos-field itself
+            continue;
           }
-          var val = elem[fieldName];
+          val = elem[fieldName];
           if(fieldName === attrName){
-            var posList = elem[_this._options.posField]['_'+fieldName];
+            posList = elem[_this._options.posField]['_'+fieldName];
             if(process.env.verbose) console.log('    attribute '+fieldName+'='+JSON.stringify(val)+' at [', posList[0], '] <- [', posList[1], ']')
             res.push(createAttrPos(null, {name: fieldName, value: val, pos: posList}));
+
+            //if only first occurance should be process, abort after submitting first match to the result list
+            if(onlyFirst){
+              return false;//<- indicate abort
+            }
           }
           //store children for visiting later? (i.e. breadth-first visition)
           breadthFirst? children.push(val) : traverse(val, res, _this);
-        });
+        }
         // use breadth-first traversing, i.e. visit chlidren after level has been visitied:
         if(breadthFirst) {
           // console.log('  bread-first visitaion: finished current object, visiting children -> ', children);//DEBUG
-          children.forEach(function(ch){traverse(ch, res, _this)});
+
+          var ch;
+          for(var j=0, len=children.length; j < len; ++j){
+            ch = children[j]
+            if(!traverse(ch, res, _this)){
+              return false;//<- indicate abort
+            }
+          }
         }
       }
     }
+    return true;//<- indicate continue
   }
   return function(jsonData) {
     return traverse(jsonData, positionList, this)

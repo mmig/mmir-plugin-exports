@@ -149,6 +149,11 @@ function getPositions(filePathOrContent, tagName, attrName, callback, options){
  *                              empty string if no replacement was done.
  * @param  {Options} [options.onlyFirst] if <code>true</code>, only the first attribute's
  *                            that is found, will be replaced
+ * @param  {Options} [options.breadthFirst] if <code>true</code>, and parser-engine supports
+ *                            the option, the data hierarchy will be parsed/processed breadth-first.
+ *                            This will e.g. ensure that the first match when searching a tag/attribute
+ *                            will be in the upper-most/outer hierarchy level.
+ *                              supported engines: "json"
  */
 function replaceAttrValue(filePathOrContent, tagName, attrName, newAttrValue, callback, options){
 

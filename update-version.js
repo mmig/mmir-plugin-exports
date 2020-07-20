@@ -315,7 +315,8 @@ function getFromJson(dirOrFile, cb){
     cb(err, _posToRes(err, posResult, 'package', jsonFilePath, 'json'));
   }, {
     parser: modUtil.getParserFor('json'),
-    breadthFirst: true
+    breadthFirst: true,
+    onlyFirst: true
   });
 
   return pkgInfo.package;
