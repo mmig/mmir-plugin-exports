@@ -13,16 +13,15 @@ function createParser(eventHandler, options){
 }
 
 /**
- * parse XML code
+ * parse JSON file
  *
  * @param  {Readable} readable a readable stream
- * @param  {Function | SAXParser} parserOrEventHandler an event handler or parser instance
+ * @param  {Function | JSONParser} parserOrEventHandler an event handler or parser instance
  * @param  {Function} callback the callback that is invoked on completion: callback(error | null)
- * @param  {Options} [options] OPTIONAL if parserOrEventHandler is a function (otherwise ignored), options for the parser DEFAULT:
- *                    {
- *                      highWaterMark: 32 * 1024,
- *                      events?: number // OPTIONAL if parserOrEventHandler is a function (otherwise ignored), bitmask for events that should be passed to the eventHandler (DEFAULT: SaxEventType.Attribute | SaxEventType.OpenTag;)
- *                    }
+ * @param  {Options} [options.breadthFirst] for parsing: if <code>true</code>, and parser-engine supports
+ *                            the option, the data hierarchy will be parsed/processed breadth-first.
+ *                            This will e.g. ensure that the first match when searching a tag/attribute
+ *                            will be in the upper-most/outer hierarchy level.
  */
 function parseStream(readable, parserOrEventHandler, callback, options){
 
