@@ -46,8 +46,8 @@ var cli = meow(`
 
   Examples
     ${appName} ~/mmir-plugin-encoder-core/
-    ${appName} ~/mmir-plugin-encoder-core/www/webAudioInput.js
-    ${appName} ~/mmir-plugin-encoder-core/www/webAudioInput.js -f backwardsCompatPlugin.js -t media
+    ${appName} ~/mmir-plugin-encoder-core ~/mmir-plugin-decoder-core
+    ${appName} --set-version 1.2.6 --enable-package-lock ~/mmir-plugin-encoder-core/
 `, {
   booleanDefault: undefined,
   flags: {
@@ -138,24 +138,39 @@ if(typeof flags.disablePackage === 'undefined'){
 
 try {
 
-  var input = cli.input[0];//TODO use others from cli.input too
-  // updateVersion(target, opts, cb)
-  versionUtil.updateVersion(input, flags, function(err, result){
-    if(err) throw(err);
-    // console.log('finished upating version', result)
-    var isVerbose = process.env.verbose;
-    var sep = isVerbose? '\n                  ' : ', ';
-    // var strChanged = result.changed.length === 0? '<no files>' : sep + result.changed.join(sep);
-    // var strUnchanged = result.unchanged.length > 0? '\n    unchanged file(s):' + sep + result.unchanged.join(sep) : '';
-    var strChanged = fileListToStr(result.changed, result.root, sep, isVerbose, ' <no files>');
-    var strUnchanged = fileListToStr(result.unchanged, result.root, sep, isVerbose, '');
-    if(strUnchanged){
-      strUnchanged = (isVerbose? '\n    ' : ' / ') + 'unchanged file(s): ' + strUnchanged;
-    }
-    var strRoot = '';// isVerbose? '' : ' (in '+result.root+')';
+  var isVerbose = process.env.verbose;
 
-    console.log('  set version ' + result.version + ' in file(s):' + strChanged + strUnchanged + strRoot);
-  });
+  var inputs = cli.input;
+
+  var size = inputs.length;
+  var curr = 0;
+  var input;
+  function checkComplete(){
+    if(++curr >= size){
+      var msg = isVerbose? 'for files/directories: ' + inputs.join(', ') : '';
+      console.log('  finished updating version' + msg + '.');
+    }
+  }
+
+  for(var i=0; i < size; ++i){
+    input = inputs[i];
+    // updateVersion(target, opts, cb)
+    versionUtil.updateVersion(input, flags, function(err, result){
+      if(err) throw(err);
+      var sep = isVerbose? '\n                  ' : ', ';
+      // var strChanged = result.changed.length === 0? '<no files>' : sep + result.changed.join(sep);
+      // var strUnchanged = result.unchanged.length > 0? '\n    unchanged file(s):' + sep + result.unchanged.join(sep) : '';
+      var strChanged = fileListToStr(result.changed, result.root, sep, isVerbose, ' <no files>');
+      var strUnchanged = fileListToStr(result.unchanged, result.root, sep, isVerbose, '');
+      if(strUnchanged){
+        strUnchanged = (isVerbose? '\n    ' : ' / ') + 'unchanged file(s): ' + strUnchanged;
+      }
+      var strRoot = size > 1? ' [in ' + path.relative(process.cwd(), result.root) +']' : '';// isVerbose? '' : ' (in '+result.root+')';
+
+      console.log('  set version ' + result.version + ' in file(s):' + strChanged + strUnchanged + strRoot);
+      checkComplete();
+    });
+  }
 
 } catch(err){
 
@@ -181,5 +196,5 @@ function fileListToStr(files, root, sep, isVerbose, noFilesStr){
   if(isVerbose){
     return sep + files.join(sep);
   }
-  return ' ' + files.map(function(f){ return path.basename(f.replace(root, '')); }).join(sep);
+  return ' ' + files.map(function(f){ return path.basename(root? f.replace(root, '') : f); }).join(sep);
 }
