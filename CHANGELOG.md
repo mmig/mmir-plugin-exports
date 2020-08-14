@@ -1,4 +1,9 @@
 
+# Version 2.1.1
+
+Changes for `updateversion` script:
+ * BUGFIX: use correct end-position for matches in regexp-parser
+
 # Version 2.1.0
 
 Changes for `updateversion` script:
