@@ -197,7 +197,7 @@ try {
       if(strUnchanged){
         strUnchanged = (isVerbose? '\n    ' : ' / ') + 'unchanged file(s): ' + strUnchanged;
       }
-      var strRoot = size > 1? ' [in ' + path.relative(process.cwd(), result.root) +']' : '';// isVerbose? '' : ' (in '+result.root+')';
+      var strRoot = size > 1? ' [in ' + (path.relative(process.cwd(), result.root) || '.'+path.sep) +']' : '';// isVerbose? '' : ' (in '+result.root+')';
 
       console.log('  set version ' + result.version + ' in file(s):' + strChanged + strUnchanged + strRoot);
       checkComplete();
