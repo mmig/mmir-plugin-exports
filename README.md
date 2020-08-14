@@ -307,6 +307,40 @@ If no version is specified with `--set-version <version>`, the version is read f
 Alternatively, the version can be read from another configuration file using
 `--from-<package | config | plugin>`.
 
+In addition, the script may target a specific file, or multiple files and directories
+```bash
+updateversion <file1> <directory1> <file2> --set-version <version>
+```
+
+For writing version information to arbitrary text files, regluar rexpressions can be used.
+However, if specifying an regular expression, it cannot target files that were discovered
+by parsing an directory, i.e. the file must be specifically be given.
+
+The regular expression must be specified in form of a JavaScript RegExp literal, e.g.
+```javascript
+/^(my-exprsion) matches$/i
+```
+If the expression contains spaces, it must be wrapped in quotes.
+
+Example:
+```bash
+updateversion <file> --version-regexp "/@version \d+\.\d+\.\d+/i" --from-package
+```
+
+If capture groups are used in the regular expression, an additional argument allows
+to specify a replacement pattern which can contain references to the capture groups
+`$<group number>` (where the first group has number `1`).  
+The version number (either specified by `--set-version` or read from a configuration
+file) can be referenced by the special group number `0`, i.e. `$0`.
+
+Example:
+```bash
+updateversion <file> --version-regexp "/(@version) \d+\.\d+\.\d+/i" --replace-pattern "$1 $0" --from-package
+```
+which would a replacement string for the version number `<version>`: `"@version <version>"`
+(i.e. instead of replacing the complete match with the version number)
+
+
 For conveinance, the script can be added to the `package.json` after installing
 the package, e.g. the following will update the version that is read from the
 `package.json` file, and will update all supported configuration files (inlcuding

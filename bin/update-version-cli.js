@@ -7,17 +7,12 @@ var path = require('path');
 
 var appName = 'updateversion';
 
-//TODO add support for options:
+// TODO add:
 // `
-// --version-pattern -m <pattern>  regular expression for matching version string in file
-//                                  DEFAULT: undefined
-//
-// --pattern-group -g <number>  number of the group in the regular expression
-//                               that matches the version-pattern in file(s):
-//                               if specified, only the group is replaced instead
-//                               of the complete matched pattern.
-//                               The first group has index 0.
-//                               DEFAULT: undefined
+// --use-regexp-for-all -a          if enabled, the regular-expression matching
+//                                   method is used for all files, i.e. including
+//                                   package.json, package-lock.json, config.xml, plugin.xml
+//                                   DEFAULT: false
 // `
 
 var cli = meow(`
@@ -38,8 +33,40 @@ var cli = meow(`
                                     DEFAULT if --from-config is false: false
     --disable-plugin, -E          do not update version in plugin.xml (Cordova)
                                     DEFAULT if --from-plugin is false: false
-    --enable-package-lock, -l    do update version in package-lock.json
+    --enable-package-lock, -l     do update version in package-lock.json
                                     DEFAULT: false
+
+    --version-regexp -r <regexp>    regular expression as a JavaScript RegExp literal,
+                                      for matching  the version string in file, e.g.
+                                      "/\*@version \d+/"
+                                      (use quotes if the regexp contains spaces)
+                                      NOTE: by default the regular-expression
+                                            mechanism is not applied automatically
+                                            found common config files, i.e. the
+                                            following found files when parsing a
+                                            directory will not be processed using
+                                            the regexp method:
+                                              package.json, package-lock.json,
+                                              config.xml, plugin.xml
+                                            (these need to be specifically referenced)
+                                      DEFAULT: undefined
+    --replace-pattern -p <pattern>  a replacement pattern for a matched regular expression:
+                                      if defined, the pattern will be used instead of
+                                      replacing the complete match.
+                                    The pattern may refer to capture groups by $<group number>
+                                      where the first group has the number 1.
+                                    The version itself can/should be refered with
+                                      "virtual" capture group $0.
+                                    Example for version string "1.2.4" and
+                                       -r "/(\* @version)\s+\d+/"
+                                       -p "$1 $0"
+                                    then replacement string would be
+                                       "* @version 1.2.4"
+                                    (use quotes if the regexp contains spaces)
+                                    NOTE: this option only has effect, if option
+                                          --version-regexp is specified!
+                                      DEFAULT: undefined
+
     --help         show usage information
     --verbose, -v  show additional information
                     DEFAULT: false
@@ -87,15 +114,20 @@ var cli = meow(`
       type: 'boolean',
       alias: 'E'
     },
-    versionPattern: {
+    versionRegexp: {
       type: 'string',
-      alias: 'm',
+      alias: 'r',
       default: ''
     },
-    patternGroup: {
-      type: 'number',
-      alias: 'g',
-      default: -1
+    // useRegexpForAll: {
+    //   type: 'boolean',
+    //   alias: 'a',
+    //   default: false
+    // },
+    replacePattern: {
+      type: 'string',
+      alias: 'p',
+      default: ''
     },
     verbose: {
       type: 'boolean',
@@ -148,7 +180,7 @@ try {
   function checkComplete(){
     if(++curr >= size){
       var msg = isVerbose? 'for files/directories: ' + inputs.join(', ') : '';
-      console.log('  finished updating version' + msg + '.');
+      if(size > 1) console.log('  finished updating version' + msg + '.');
     }
   }
 
@@ -176,7 +208,9 @@ try {
 
   console.error(`
   An Error occurred for:
-    ${appName} ${cli.input.join(' ')} -f ${cli.flags.file} -t ${cli.flags.type} -e ${cli.flags.exported || void(0)}
+    ${appName} ${cli.input.join(' ')} --set-version ${cli.flags.setVersion} --from-package ${cli.flags.fromPackage} --from-config ${cli.flags.fromConfig} --from-plugin ${cli.flags.fromPlugin}\
+                  --disable-package ${cli.flags.disablePackage} --disable-config ${cli.flags.disableConfig} --from-plugin ${cli.flags.disablePlugin}\
+                  --enable-package-lock ${cli.flags.enablePackageLock} --version-regexp ${cli.flags.versionRegexp} --replace-pattern ${cli.flags.replacePattern} --verbose ${cli.flags.verbose}
 
   Is the file path correct?`);
 

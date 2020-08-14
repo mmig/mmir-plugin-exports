@@ -28,9 +28,10 @@ function setDefaultParser(type){
 /**
  * get the parser engine
  *
- * @param {"saxes" | "sax-wasm" | "xml" | "json"} [type] the name for the parser engine
+ * @param {"saxes" | "sax-wasm" | "xml" | "json" | "regexp" | string} [type] the name for the parser engine
+ *                                      If type is specified, but does not match any of the engines, then "regexp" is used.
  *                                      DEFAULT: "sax-wasm"
- *                                      NOTE you may need to install "sax-wasm" before you can use it
+ *                                      NOTE you may need to install "saxes" before you can use it
  * @return the parser engine module
  */
 function getParserFor(type){
@@ -41,7 +42,16 @@ function getParserFor(type){
 /** HELPER determine parser engine type */
 function _getType(type){
   if(type){
-    return type === 'xml'? defaultParserType : type;
+    switch(type){
+      case 'xml':
+        return defaultParserType;
+      case 'saxes':
+      case 'sax-wasm':
+      case 'json':
+        return type;
+      default:
+        return 'regexp';
+    }
   }
   return parserType || defaultParserType;
 }
@@ -147,6 +157,8 @@ function getPositions(filePathOrContent, tagName, attrName, callback, options){
  * @param  {Function} callback callback that will be invoked with the XML string
  *                              where the attribute value has been replaced, or
  *                              empty string if no replacement was done.
+ * @param  {Options} [options.parser] the parser engine. If not defined, the current parser-engine
+ *                            will be used.
  * @param  {Options} [options.onlyFirst] if <code>true</code>, only the first attribute's
  *                            that is found, will be replaced
  * @param  {Options} [options.breadthFirst] if <code>true</code>, and parser-engine supports
@@ -154,6 +166,16 @@ function getPositions(filePathOrContent, tagName, attrName, callback, options){
  *                            This will e.g. ensure that the first match when searching a tag/attribute
  *                            will be in the upper-most/outer hierarchy level.
  *                              supported engines: "json"
+ * @param  {Options} [options.regexp] a string containing a JavaScript regular expression literal,
+ *                            e.g. <code>"/tEsT/i"</code>.
+ *                            NOTE: for using the regexp-engine, this option is required!
+ *                              supported engines: "regexp"
+ * @param  {Options} [options.replacePattern] a string replacing found regexp matches: if defined,
+ *                            replaces the match with this pattern, instead of the <code>newAttrValue</code> string.
+ *                            This can be used to include capture groups from the regexp
+ *                            <code>"$<group number>"</code>, where the first group has number <code>1</code>,
+ *                            and the <code>newAttrValue</code> can be referred to by <code>"$0"</code>
+ *                              supported engines: "regexp"
  */
 function replaceAttrValue(filePathOrContent, tagName, attrName, newAttrValue, callback, options){
 
@@ -213,7 +235,13 @@ function replaceAttrValue(filePathOrContent, tagName, attrName, newAttrValue, ca
         if(process.env.verbose) console.log('value for ', pos.attrName, ': ['+offsetStart+', '+offsetEnd+'] -> ', JSON.stringify(content.substring(offsetStart, offsetEnd)));
         if(process.env.verbose) console.log('replacing (isJson? '+isJsonVal+', parserType='+_parser.type+') with -> ', (isJsonVal? JSON.stringify(newAttrValue) : newAttrValue));
 
-        result = result.substring(0, offsetStart) + (isJsonVal? JSON.stringify(newAttrValue) : newAttrValue) + result.substring(offsetEnd);
+        let replVal = (isJsonVal? JSON.stringify(newAttrValue) : newAttrValue);
+        if(typeof _parser.replaceValue === 'function'){
+          replVal = _parser.replaceValue(replVal, pos, options);
+          if(process.env.verbose) console.log('  replacing with processed value -> ', replVal);
+        }
+
+        result = result.substring(0, offsetStart) + replVal + result.substring(offsetEnd);
 
         if(onlyFirst){
           return callback(null, result === content? '' : result);

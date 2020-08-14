@@ -24,11 +24,52 @@ function updateVersion(target, opts, cb){
 
   if(!fileUtils.isDirectory(targetPath)){
     targetDir = path.dirname(targetPath);
-    _loadPromise(targetPath).then(function(res){
-      processConfigs(null, [res]);
+
+    var loadConfigPromise;
+    var ver = opts.setVersion;
+    if(!ver){
+
+      // do include the config file that is needed to read from (i.e. for extracting version)
+      var filterList = [];
+      if(opts.fromPackage){
+        opts.disablePackage = true;//do prevent writing to loaded package.json
+        filterList.push('package.json');
+      } else if(opts.fromConfig){
+        opts.disableConfig = true;//do prevent writing to loaded config.xml
+        filterList.push('config.xml');
+      } else if(opts.fromPlugin){
+        opts.disablePlugin = true;//do prevent writing to loading plugin.xml
+        filterList.push('plugin.xml');
+      }
+      loadConfigPromise = loadConfigFiles(targetDir, null, filterList);
+
+    } else {
+
+      loadConfigPromise = Promise.resolve([]);
+    }
+
+    var fileType;
+    if(opts.versionRegexp){
+      fileType = 'text';
+    }//else: detect from file extension
+
+    Promise.all([loadConfigPromise, _loadPromise(targetPath, fileType, opts)]).then(function(results){
+      const configs = results[0];
+      if(configs.length === 0 && opts.fromPackage){
+        //did not find package.json in same directory as the target file:
+        // try to find package by traversing its directory upwards:
+        getFromJson(targetDir, function(err, pkgResult){
+          if(err) cb(err);
+          processConfigs(null, [pkgResult, results[1]]);
+        }, /*explicitly ignore that the package.json is not found in the specified directory (but somewhere further up): */ true);
+      } else {
+        configs.push(results[1])
+        processConfigs(null, configs);
+      }
     }).catch(function(err){
       cb(err);
     });
+
   } else {
     // do exclude config files that are neither needed to read from (for extracting version),
     // nor are targeted to be modified (version changed)
@@ -119,7 +160,11 @@ function updateVersion(target, opts, cb){
 
       }, {
         parser: modUtil.getParserFor(info.ext),
-        onlyFirst: true
+        onlyFirst: info.regexp? void(0) : true,// if regexp: let regexp "decide" if only first should be replaced (i.e. if global modifier is specified)
+
+        //for regexp: if a replace-pattern was specified, then the regexp and replace-pattern must be supplied in the options:
+        regexp: info.regexp && opts.replacePattern? opts.versionRegexp : void(0),
+        replacePattern: info.regexp? opts.replacePattern : void(0),
       });
     });
 
@@ -151,10 +196,11 @@ function updateVersion(target, opts, cb){
  *  config.xml, plugin.xml, package.json
  *
  * @param  {string} dirPath the target directory (only this root directory will be scanned for config files)
- * @param  {Function} cb callback <pre>callback(err: null | Error, result: VersionPositionResult[])</pre>
+ * @param  {Function | null} cb callback <pre>callback(err: null | Error, result: VersionPositionResult[])</pre>
  * @param  {RegExpr} [filter] file-name filter (if omitted all available config files will be loaded)
  * @param  {boolean} [isExludeFilter] if file-names matching filter should be exclude (instead of included)
  *
+ * @return {undefined | Promise<VersionPositionResult[]> } if argument cb is null, returns a promise, otherwise undefined
  */
 function loadConfigFiles(dirPath, cb, filterOrList, isExludeFilter){
   const isList = Array.isArray(filterOrList);
@@ -167,7 +213,12 @@ function loadConfigFiles(dirPath, cb, filterOrList, isExludeFilter){
     return _loadPromise(p, type);
   });
 
-  Promise.all(tasks).then(function(results){
+  const loadPromise = Promise.all(tasks);
+  if(!cb){
+    return loadPromise;
+  }
+
+  loadPromise.then(function(results){
     cb(null, results);
   }).catch(function(err){
     cb(err);
@@ -211,17 +262,18 @@ function _fileType(filePath){
 /**
  * HELPER load and parse config file for the version information
  * @param       {string} filePath the config file path
- * @param       {"json" | "xml"} [type] if omitted will be detected from file extension
+ * @param       {"json" | "xml" | "text"} [type] if omitted will be detected from file extension
+ * @param       {MeowOptions} [opts] command line options (MUST be specified, if type is "text")
  * @return      {Promise<VersionPositionResult>} the loading & parsing result, see #_posToRes
  */
-function _loadPromise(filePath, type){
+function _loadPromise(filePath, type, opts){
   type = type || _fileType(filePath);
   return new Promise(function(resolve, reject){
     const cb = function(err, res){
       if(err) reject(err)
       else resolve(res);
     };
-    type === 'xml'? getFromXml(filePath, cb) : getFromJson(filePath, cb);
+    type === 'xml'? getFromXml(filePath, cb) : type === 'json'? getFromJson(filePath, cb) : getTextFile(filePath, opts, cb);
   });
 }
 
@@ -261,10 +313,11 @@ function _exists(dir, file, filter, isExludeFilter){
  *              <pre>{
  *                value: string // the version value
  *                content: string // the raw string content of the config file
- *                type: "plugin" | "project" | "package"
+ *                type: "plugin" | "project" | "package" | "text"
  *                path: string // the file path of the config file
- *                ext: "json" | "xml" // the file extension (without dot)
+ *                ext: "json" | "xml" | string // the file extension (without dot)
  *                lock: boolean // true if file is a package-lock file
+ *                regexp: boolean // if regular-expression mechanism (instead of "real" parsing) was used (-> true, if type is "text")
  *                positions: Position[]
  *              }</pre>
  */
@@ -287,11 +340,23 @@ function _posToRes(error, posResult, type, filePath, fileExt){
     content: posResult.content,
     path: filePath,
     ext: fileExt,
-    lock: /-lock\.json$/.test(path.basename(filePath))
+    lock: /-lock\.json$/.test(path.basename(filePath)),
+    regexp: type === 'text'
   };
 }
 
-function getFromJson(dirOrFile, cb){
+/**
+ * load & parse package.json or package-lock.json
+ *
+ * will invoke callback with an error, if package.json is found in an directory other than the path given in the argument
+ *
+ * @param  {string} dirOrFile the path to the file, or containing directory
+ * @param  {Function} cb the callback which will be invoked with the results (for details on result object see #_posToRes):
+ *                          cb(err | null, results)
+ * @param  {boolean} [ignoreUnexpectedLocation] OPTIONAL do ignore, if found package.json is located directly in the specified path, i.e. if found in a parent directory
+ */
+function getFromJson(dirOrFile, cb, ignoreUnexpectedLocation){
+
   var dirPath = dirOrFile;
   if(!fileUtils.isDirectory(dirPath)){
     dirPath = path.dirname(dirPath);
@@ -299,7 +364,7 @@ function getFromJson(dirOrFile, cb){
   var isLockFile = /^package-lock\.json$/i.test(path.basename(dirOrFile));
   var pkgInfo = packageUtils.getPackageInfo(dirPath);
   var jsonFilePath = pkgInfo.path;
-  if(path.normalize(path.dirname(jsonFilePath)) != path.resolve(dirPath)){
+  if(!ignoreUnexpectedLocation && path.normalize(path.dirname(jsonFilePath)) != path.resolve(dirPath)){
     return cb(new Error('Did not find package.json at expected location: ', dirPath, ', instead found package.json at ', jsonFilePath));
   }
 
@@ -309,6 +374,7 @@ function getFromJson(dirOrFile, cb){
       return cb(new Error('File does not exist: ' + jsonFilePath));
     }
   }
+
 
   var attr = 'version';
   modUtil.getPositions(jsonFilePath, null, attr, function(err, posResult){
@@ -333,6 +399,19 @@ function getFromXml(xmlFilePath, cb){
     cb(err, _posToRes(err, posResult, type, xmlFilePath, 'xml'));
   }, {
     parser: modUtil.getParserFor('xml')
+  });
+}
+
+function getTextFile(textFilePath, options, cb){
+
+  var ext = path.extname(textFilePath);
+  modUtil.getPositions(textFilePath, null, null, function(err, posResult){
+    cb(err, _posToRes(err, posResult, 'text', textFilePath, ext));
+  }, {
+    parser: modUtil.getParserFor('regexp'),
+    regexp: options.versionRegexp,
+    replacePattern: options.replacePattern,
+    // onlyFirst: true
   });
 }
 
