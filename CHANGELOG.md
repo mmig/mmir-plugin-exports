@@ -1,4 +1,12 @@
 
+# Version 2.1.0
+
+Changes for `updateversion` script:
+ * FIX: do only list files as unchanged, if they really exists
+ * IMPROVE: support aborting traversing json-data for firstOnly upon first match
+ * FEATURE: added support for multiple input files / directories
+ * FEATURE: added support for regexp-based replacement of version number in arbitrary text files
+
 # Version 2.0.0
 
 **BREAKING CHANGE:**  
