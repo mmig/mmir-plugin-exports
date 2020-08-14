@@ -128,7 +128,7 @@ function createAttrPosFinderFunc(_tagName, _attrName, positionList, options){
 
       const pos = createAttrPos(_tagName, _attrName, {
         start: m.index,
-        length: m[0].length,
+        length: m[0].length - 1,
         value: m[0]
       });
 
