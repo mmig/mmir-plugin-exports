@@ -6,9 +6,23 @@
 [![API](https://img.shields.io/badge/docs-API%20reference-orange.svg?style=flat)](https://mmig.github.io/mmir/api)
 [![Guides](https://img.shields.io/badge/docs-guides-orange.svg?style=flat)](https://github.com/mmig/mmir/wiki)
 
-utility for creating `module-ids.gen.js` for mmir-plugins:
+Utilities for creating metadata files (`module-ids.gen.js`, `module-config.gen.js`) and
+tools for managing compatiblity modules, typings, and project metadata.
 
-## `module-ids.gen.js`
+__Overview:__
+<!-- TOC depthFrom:2 depthTo:6 withLinks:1 updateOnSave:1 orderedList:0 -->
+
+- [`pluginexport`: Creating and Updating `module-ids.gen.js`](#pluginexport-creating-and-updating-module-idsgenjs)
+- [`pluginexport`: Creating and Updating `module-config.gen.js`](#pluginexport-creating-and-updating-module-configgenjs)
+- [`createcompat`: Creating Media Plugin Compatibility Modules](#createcompat-creating-media-plugin-compatibility-modules)
+- [`dtsdownlevel`: Creating Compatibility Typings](#dtsdownlevel-creating-compatibility-typings)
+- [Cordova Helper Scripts for MODE](#cordova-helper-scripts-for-mode)
+- [`copycordovascripts`: Install / Copy Scripts into Plugin](#copycordovascripts-install-copy-scripts-into-plugin)
+- [`updateversion`: Update `version` Field in `npm` and `cordova` Configuration Files](#updateversion-update-version-field-in-npm-and-cordova-configuration-files)
+
+<!-- /TOC -->
+
+## `pluginexport`: Creating and Updating `module-ids.gen.js`
 
 running `pluginexport <dir>`
 
@@ -37,7 +51,7 @@ parses the `package.json` of a plugin and
    * `dependencies`
 
 
-## `module-config.gen.js`
+## `pluginexport`: Creating and Updating `module-config.gen.js`
 
 running `pluginexport <dir>`
 
@@ -234,7 +248,7 @@ NOTE 2: The build-config creator function must be specified using pure `javascri
         (i.e. `PluginExportBuildConfigCreator`); if the creator function returns a
         FALSY value, it will be ignored.
 
-## Creating Compatibility Modules
+## `createcompat`: Creating Media Plugin Compatibility Modules
 
 running `createcompat <dir>`
 
@@ -248,7 +262,7 @@ parses the `package.json` of the plugin and
      * exportedName: if type is "custom", the name for the (global) variable must be specified, to which the module will be exported
   * example: `mmir.compat = {"./www/recorderExt.js": {"file": "./res/recorderExtCompat.js", "type": "custom", "exportedName": "Recorder"}}`
 
-## Creating Compatibility Typings
+## `dtsdownlevel`: Creating Compatibility Typings
 
 running `dtsdownlevel <dir>` will create backwards compatible typings `*.d.ts` for use in projects that use `typescript` < 3.8
 (the targeted compatiblity level is `typescript` version 3.5).
@@ -329,7 +343,7 @@ A specific mode can be activated in various ways:
     NOTE if the preference-tag is added to `config.xml` before installing/adding
          the cordova plugin, the command-line argument can be omitted
 
-### Install / Copy Scripts into Plugin
+## `copycordovascripts`: Install / Copy Scripts into Plugin
 
 after adding entry into `package.json`:
 ```json
@@ -345,7 +359,7 @@ npm run install-cordova-scripts
 will copy the cordova helper scripts into the plugin's sub-directory `res/js/`.
 
 
-### Update `version` Field in `npm` and `cordova` Configuration Files
+## `updateversion`: Update `version` Field in `npm` and `cordova` Configuration Files
 
 The script
 ```bash
