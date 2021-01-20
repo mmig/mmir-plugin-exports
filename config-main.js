@@ -12,7 +12,7 @@ const BUILD_CONFIG_FILE = 'build-config.ts';
 const reMainConfigInterface = /PluginConfig$/;
 const reSpeechConfigInterface = /PluginSpeechConfigEntry$/;
 const reConfigInterface = /PluginConfigEntry$/;
-const reAppConfigType = /AppConfig$/;
+const reAppConfigType = /AppConfig|BuildConfigCreator$/;
 const mainInterfaceKey = '_main';
 
 const PropertyKind = 'PropertySignature';

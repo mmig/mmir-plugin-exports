@@ -136,6 +136,7 @@ _(In addition, exported variables which's type end with `AppConfig` are also col
 For example:
    ```typescript
    import { AppConfig } from 'mmir-tooling';
+   import { WebpackAppConfig } from 'mmir-webpack';
    export const buildConfig: AppConfig = {
      states: {
        models: {
@@ -149,6 +150,9 @@ For example:
          },
        }
      }
+   };
+   export const buildConfigLibDependencies: WebpackAppConfig = {
+     includeModules: ['mmirf/util/extendDeep']
    };
    ```
    ->
@@ -167,11 +171,68 @@ For example:
            },
          }
        }
+     },
+     {
+       includeModules: ['mmirf/util/extendDeep']
      }
    ]
    ```
 
-NOTE 1: build-configuration parsing only considers `AppConfig` variables that are immediately initialized.
+NOTE 1: build-configuration parsing only considers `AppConfig` variables that are immediately initialized or creator functions that return build configurations (or FALSY values).
+
+Example with build-config creator function:
+   ```typescript
+   import { PluginExportBuildConfigCreator , AppConfig } from 'mmir-tooling';
+
+   // a dynamic build-config specification using a creator function with:
+   //   type PluginExportBuildConfigCreator = (pluginConfig: PluginConfig & TTSPluginSpeechConfig, runtimeConfig: RuntimeConfiguration, pluginBuildConfigs: PluginExportBuildConfig[]) => PluginExportBuildConfig;
+   export const buildConfigLibDependencies: PluginExportBuildConfigCreator = function(pluginConfig, runtimeConfig, pluginBuildConfigs) {
+     if(pluginConfig && pluginConfig.encoder === 'wav'){
+       return {
+         includeModules: ['mmir-plugin-encoder-core/workers/recorderWorkerExt']
+       }
+     }
+   };
+
+   // ... and a non-dynamic build-config specification:
+   export const buildConfig: AppConfig = {
+     states: {
+       models: {
+         myStateModel: {
+           moduleId: 'mmirf/myCustomStateModel',
+           file: __dirname + '/states/my-model.xml'
+         }
+       }
+     }
+   };
+   ```
+   ->
+   ```javascript
+   buildConfigs: [
+     function(pluginConfig, _runtimeConfig, _pluginBuildConfigs) {
+       if(pluginConfig && pluginConfig.encoder === 'wav'){
+         return {
+           includeModules: ['mmir-plugin-encoder-core/workers/recorderWorkerExt']
+         }
+       }
+     },
+     {
+       states: {
+         models: {
+           myStateModel: {
+             moduleId: 'mmirf/myCustomStateModel',
+             file: __dirname + '/states/my-model.xml'
+           }
+         }
+       }
+     }
+   ],
+   ```
+
+NOTE 2: The build-config creator function must be specified using pure `javascript`,
+        i.e. without any `typescript` annotations except for the function type itself
+        (i.e. `PluginExportBuildConfigCreator`); if the creator function returns a
+        FALSY value, it will be ignored.
 
 ## Creating Compatibility Modules
 
