@@ -31,6 +31,9 @@ var exportsGen = require('./exports-gen.js');
 var exportModuleFilesFieldName = exportsGen.getExportedFilesFieldName();
 var exportModuleModulesFieldName = exportsGen.getExportedModulesFieldName();
 
+var configGen = require('./config-gen.js');
+var defaultModuleConfigFileName = configGen.getDefaultFileName();
+
 function normalize(absPath, absPackageRoot){
   if(!path.isAbsolute(absPath)){
     absPath = path.resolve(absPackageRoot, absPath);
@@ -351,8 +354,17 @@ function getBuildConfigFiles(packageInfo, alias, rootPath, buildConfigList){
       throw new Error('file does not exist: '+file);
     }
     file = normalize(file, rootPath);
-    if(process.env.verbose) console.log('  export-utils: adding plugin build config file -> ', file);//DEBUG
+    if(process.env.verbose) console.log('  export-utils: adding plugin build-config file -> ', file);//DEBUG
     buildConfigList.push(file);
+  }
+
+  if(buildConfigList.length === 0){
+    var defBuildConfigFile = path.resolve(pkgPath, defaultModuleConfigFileName);
+    if(fs.existsSync(defBuildConfigFile)){
+      var file = normalize(defBuildConfigFile, rootPath);
+      if(process.env.verbose) console.log('  export-utils: adding plugin (default) build-config file -> ', file);//DEBUG
+      buildConfigList.push(file);
+    }
   }
 
   return buildConfigList;

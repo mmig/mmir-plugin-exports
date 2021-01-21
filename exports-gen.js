@@ -84,6 +84,9 @@ var _getBuildConfigTemplate = function _getBuildConfig(buildConfigsMap){
   var dupl = buildConfigsMap | {};
   if(_buildConfig){
     var buildConfig = require(__dirname+'/'+_buildConfig);
+    if(buildConfig.buildConfigs){
+      buildConfig = buildConfig.buildConfigs;
+    }
     if(Array.isArray(buildConfig)){
       _join(buildConfig, buildConfigs, dupl);
     } else if(!dupl){
