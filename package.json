@@ -28,18 +28,18 @@
   "dependencies": {
     "downlevel-dts": "^0.5.0",
     "esprima": "^4.0.1",
-    "fs-extra": "^9.0.1",
+    "fs-extra": "^9.1.0",
     "jsonlint-pos": "^2.1.0",
-    "meow": "^7.0.1",
+    "meow": "^7.1.1",
     "path-parse": "^1.0.6",
     "read-pkg-up": "^7.0.1",
     "regexpp": "^3.1.0",
-    "sax-wasm": "^1.4.6",
-    "typescript": "^3.9.5"
+    "sax-wasm": "^2.0.0",
+    "typescript": "^3.9.7"
   },
   "devDependencies": {
     "@types/esprima": "^4.0.2",
-    "@types/fs-extra": "^9.0.1",
+    "@types/fs-extra": "^9.0.6",
     "@types/path-parse": "^1.0.19"
   }
 }

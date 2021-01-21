@@ -97,12 +97,12 @@ function toPos(position, offset){
 function createAttrPos(tagName, attrData){
   return {
     tagName: tagName,
-    attrName: attrData.name,
-    nameStart: toPos(attrData.nameStart),
-    nameEnd: toPos(attrData.nameEnd),
-    attrValue: attrData.value,
-    valueStart: toPos(attrData.valueStart),
-    valueEnd: toPos(attrData.valueEnd)
+    attrName: attrData.name.value,
+    nameStart: toPos(attrData.name.start),
+    nameEnd: toPos(attrData.name.end),
+    attrValue: attrData.value.value,
+    valueStart: toPos(attrData.value.start),
+    valueEnd: toPos(attrData.value.end)
   };
 }
 
@@ -113,7 +113,7 @@ function createAttrPosFinderFunc(tagName, attrName, positionList){
 
       if (event === SaxEventType.Attribute) {
         // process attribute
-        if(process.env.verbose) console.log('sax event Attribute (',event,') -> '+data.name+'='+JSON.stringify(data.value)+' at [', data.nameStart, ',', data.nameEnd, '] <- [', data.valueStart, ',', data.valueEnd, ']', data)
+        if(process.env.verbose) console.log('sax event Attribute (',event,') -> '+data.name.value+'='+JSON.stringify(data.value.value)+' at [', data.name.start, ',', data.name.end, '] <- [', data.value.start, ',', data.value.end, ']', data)
         positionList.push(createAttrPos(null, data));
       }
 
@@ -125,38 +125,38 @@ function createAttrPosFinderFunc(tagName, attrName, positionList){
         if(process.env.verbose) console.log('sax event OpenTag (',event,') -> ', tname)
         if(tagName === tname){
           data.attributes.forEach(function(attrData) {
-            if(process.env.verbose) console.log('    attribute '+attrData.name+'='+JSON.stringify(data.value)+' at [', attrData.nameStart, ',', attrData.nameEnd, '] <- [', attrData.valueStart, ',', attrData.valueEnd, ']', attrData)
-            if(!attrName || attrName === attrData.name){
+            if(process.env.verbose) console.log('    attribute '+attrData.name.value+'='+JSON.stringify(attrData.value.value)+' at [', attrData.name.start, ',', attrData.name.end, '] <- [', attrData.value.start, ',', attrData.value.end, ']', attrData)
+            if(!attrName || attrName === attrData.name.value){
               positionList.push(createAttrPos(tname, attrData))
             }
           });
         } else if(process.env.verbose){
           data.attributes.forEach(function(attrData) {
-            if(process.env.verbose) console.log('    IGNORED non-matching tag attribute '+attrData.name+'='+JSON.stringify(attrData.value)+' at [', attrData.nameStart, ',', attrData.nameEnd, '] <- [', attrData.valueStart, ',', attrData.valueEnd, ']')
+            if(process.env.verbose) console.log('    IGNORED non-matching tag attribute '+attrData.name.value+'='+JSON.stringify(attrData.value.value)+' at [', attrData.name.start, ',', attrData.name.end, '] <- [', attrData.value.start, ',', attrData.value.end, ']')
           });
         }
 
       } else if(process.env.verbose) {
         if (event === SaxEventType.Attribute) {
           // process attribute
-          if(process.env.verbose) console.log('IGNORED sax event Attribute (',event,') -> '+data.name+'='+JSON.stringify(data.value)+' at [', data.nameStart, ',', data.nameEnd, '] <- [', data.valueStart, ',', data.valueEnd, ']')
+          if(process.env.verbose) console.log('IGNORED sax event Attribute (',event,') -> '+data.name.value+'='+JSON.stringify(data.value.value)+' at [', data.name.start, ',', data.name.end, '] <- [', data.value.start, ',', data.value.end, ']')
         } else if (event === SaxEventType.CloseTag) {
           // process close tag
-          const tname = data.name;
+          const tname = data.name.value;
           if(process.env.verbose) console.log('IGNORED sax event CloseTag (',event,') -> ', tname)
           if(tagName === tname){
             data.attributes.forEach(function(attrData) {
-              if(process.env.verbose) console.log('    IGNORED attribute '+attrData.name+'='+JSON.stringify(attrData.value)+' at [', attrData.nameStart, ',', attrData.nameEnd, '] <- [', attrData.valueStart, ',', attrData.valueEnd, ']')
+              if(process.env.verbose) console.log('    IGNORED attribute '+attrData.name.value+'='+JSON.stringify(attrData.value.value)+' at [', attrData.name.start, ',', attrData.name.end, '] <- [', attrData.value.start, ',', attrData.value.end, ']')
             });
           }
 
         } else if (event === SaxEventType.Comment) {
           // process comment tag
-          console.log('sax event Comment -> ', data.name || data.constructor.name, data.value)
+          console.log('sax event Comment -> ', data.name || (data.constructor && data.constructor.name), data.value)
 
         } else {
           // process open tag
-          console.log('IGNORED sax event ',event,' -> ', data.name || data.constructor.name, Buffer.from(data.data).toString('utf8'), data)
+          console.log('IGNORED sax event ',event,' -> ', data.name || (data.constructor && data.constructor.name), Buffer.from(data.data).toString('utf8'), data)
         }
       }
     }
