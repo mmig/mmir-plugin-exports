@@ -12,6 +12,8 @@ var appName = 'downlevel-dts';
 
 var defaultTs36Dir = 'ts3.6';
 
+var defaultTargetVersion = '3.4.0';
+
 var cli = meow(`
   Usage
     ${appName} <dts directory>
@@ -23,6 +25,9 @@ var cli = meow(`
     --force, -f   force writing to the target typings directory
                   (will clear the target directory before writing to it)
                     DEFAULT: false
+    --to, -t      the target typescript version for down-leveling
+                  (minimal supported version: 3.4.0)
+                    DEFAULT: ${defaultTargetVersion}
     --help         show usage information
     --verbose, -v  show additional information
                     DEFAULT: false
@@ -42,6 +47,11 @@ var cli = meow(`
       alias: 'f',
       default: false
     },
+    to: {
+      type: 'string',
+      alias: 't',
+      default: defaultTargetVersion
+    },
     verbose: {
       type: 'boolean',
       alias: 'v',
@@ -60,6 +70,8 @@ if(!cli.input || !cli.input[0]){
 if(cli.flags.verbose){
   process.env.verbose = true;
 }
+
+var targetVersion = cli.flags.to;
 
 var input = cli.input[0];
 var absInput = path.resolve(input);
@@ -97,7 +109,7 @@ var relOut = path.join(relInput, path.relative(absInput, absOut));
 
 try {
 
-  downlevel.main(absInput, relOut);
+  downlevel.main(absInput, relOut, targetVersion);
   console.log('  unmodified dts file(s) at            ' + absInput);
   console.log('  created dts compatibility file(s) at ' + absOut);
 
