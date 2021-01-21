@@ -1,4 +1,11 @@
 
+# Version 2.2.2
+
+Changes for `dtsdownlevel` script:
+ * support option `to`: target `typescript` version for down-leveling (default: 3.4.0)
+ * BUGFIX: correctly invoke `downlevel-dts.main()` with targted typescript version
+
+
 # Version 2.2.1
 
  * updated dependencies
