@@ -1,4 +1,10 @@
 
+# Version 2.2.3
+
+Changes for `pluginexport` script:
+ * FIX: automatically include default build-config file `module-config.gen.js`,
+        if no override is defined in package.json
+
 # Version 2.2.2
 
 Changes for `dtsdownlevel` script:
