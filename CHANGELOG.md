@@ -1,4 +1,16 @@
 
+# Version 2.2.1
+
+ * updated dependencies
+ * migrated `sax-wasm` from 1.x to 2.x
+
+# Version 2.2.0 (unpublished)
+
+Changes for `pluginexport` script (`config-gen.js`):
+ * support dynamic build-config definitions (by using a creator function, see README exampel with `PluginExportBuildConfigCreator`)
+ * BUGFIX: correctly add all config options for union types in interface definitions
+           (before, only options for first type was added)
+
 # Version 2.1.1
 
 Changes for `updateversion` script:
