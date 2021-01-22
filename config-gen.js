@@ -155,6 +155,10 @@ function generateConfigsCode(configInfo){
     code += doGenerateConfigsCode(configInfo, 2);
   }
 
+  if(configInfo.buildConfigs && configInfo.buildConfigs.length > 0){
+    code += generateBuildConfigs(configInfo.buildConfigs, 2);
+  }
+
   if(configInfo.enums && configInfo.enums.length > 0){
     configInfo.enums.forEach(function(enm){
       if(enm.doc){

@@ -75,30 +75,45 @@ var _getAllTemplate = function _getAll(type, mode, isResolve){
 /**
  * HELPER returns list of (mmir) build configurations (to be merged into the main mmir build configuration)
  *
+ * @param       {String} [pluginName] OPTIONAL if specified and multiple plugin-definitions are specified, only the build-configs for the specified plugin are include (note: filter does not apply recursively to dependencies)
  * @param       {Object} [buildConfigsMap] OPTIONAL a map for already included buildConfigs: {[buildConfig: BuildConfig]: Boolean}
  * @return      {Array<BuildConfig>} a list of (mmir) build configurations; may be empty
  */
-var _getBuildConfigTemplate = function _getBuildConfig(buildConfigsMap){
-
+var _getBuildConfigTemplate = function _getBuildConfig(pluginName, buildConfigsMap){
+  if(pluginName && typeof pluginName !== 'string'){
+    buildConfigsMap = pluginName;
+    pluginName = void(0);
+  }
   var buildConfigs = [];
   var dupl = buildConfigsMap | {};
   if(_buildConfig){
-    var buildConfig = require(__dirname+'/'+_buildConfig);
-    if(buildConfig.buildConfigs){
-      buildConfig = buildConfig.buildConfigs;
-    }
+    var buildConfigMod = require(__dirname+'/'+_buildConfig);
+    var buildConfig = buildConfigMod.buildConfigs;
     if(Array.isArray(buildConfig)){
       _join(buildConfig, buildConfigs, dupl);
-    } else if(!dupl){
+    } else if(buildConfig && !dupl[buildConfig]){
       dupl[buildConfig] = true;
       buildConfigs.push(buildConfig);
+    }
+    if(Array.isArray(buildConfigMod.pluginName) && buildConfigMod.plugins){
+      buildConfigMod.pluginName.forEach(function(name){
+        if(!pluginName || pluginName === name){
+          var pluginBuildConfig = buildConfigMod.plugins[name].buildConfigs;
+          if(Array.isArray(pluginBuildConfig)){
+            _join(pluginBuildConfig, buildConfigs, dupl);
+          } else if(pluginBuildConfig && !dupl[pluginBuildConfig]){
+            dupl[pluginBuildConfig] = true;
+            buildConfigs.push(pluginBuildConfig);
+          }
+        }
+      });
     }
   }
 
   this.dependencies.forEach(function(dep){
     var depExports = require(dep + '/module-ids.gen.js');
     if(depExports.buildConfig){
-      var depBuildConfigs = depExports.getBuildConfig(dupl);
+      var depBuildConfigs = depExports.getBuildConfig(null, dupl);
       _join(depBuildConfigs, buildConfigs, dupl);
     }
   });

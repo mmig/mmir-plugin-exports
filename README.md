@@ -248,6 +248,52 @@ NOTE 2: The build-config creator function must be specified using pure `javascri
         (i.e. `PluginExportBuildConfigCreator`); if the creator function returns a
         FALSY value, it will be ignored.
 
+If a module defines multiple plugins, build-configs for specific plugins can be
+specified via `PluginBuildConfig`, similar to the configuration definitions via `PluginConfig`.
+
+```typescript
+//define specific build-configs per plugin:
+export class PluginBuildConfig {
+  /*
+   * list of build-configs for plugin asrAndroid
+   * NOTE: variables must be defined as const in the main module context (see below)
+   */
+  asrAndroid: Partial<WebpackAppConfig>[] = [
+    simpleBuildConfigLibDependencies,
+    {
+      includeModules: ['direct/declaration']
+    }
+  ];
+
+  /*
+   * single of build-config for plugin ttsAndroid
+   */
+  ttsAndroid: PluginExportBuildConfigCreator = function(_pluginConfig, _runtimeConfig, _pluginBuildConfigs) {
+    return {
+      includeModules: ['member/direct/other/module']
+    }
+  };
+}
+
+/*
+ * referenced in specific build-config for asrAndroid
+ */
+const simpleBuildConfigLibDependencies: WebpackAppConfig = {
+  includeModules: ['mmirf/util/extendDeep']
+};
+
+/*
+ * non-specific build-config (i.e. for all plugins) need to be exported
+ */
+export const buildConfigLibDependencies: PluginExportBuildConfigCreator = function(pluginConfig, _runtimeConfig, _pluginBuildConfigs) {
+  if(pluginConfig && pluginConfig.encoder === 'wav'){
+    return {
+      includeModules: ['mmir-plugin-encoder-core/workers/recorderWorkerExt']
+    }
+  }
+};
+```
+
 ## `createcompat`: Creating Media Plugin Compatibility Modules
 
 running `createcompat <dir>`
