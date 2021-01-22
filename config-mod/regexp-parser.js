@@ -54,14 +54,27 @@ function parseStream(readable, parserOrEventHandler, callback, options){
   });
 }
 
-function parseRegExp(strRe){//, forceGlobalFlag){
+function parseRegExp(strRe, disableGlobalFlag){
   const parsedRe = regexp.parseRegExpLiteral(strRe);//will throw error if it is not a valid RegExp literal
   const cleaned = parsedRe.pattern.raw.replace(/\\\//g, '/');//remove escaped slash that is required in regexp literals
   let flags = parsedRe.flags.raw;
-  //DISABLED: if regexp definition does not have global set, do treat parsing as if onlyFirst was set to true
-  // if(forceGlobalFlag && !parsedRe.flags.global){//must set global flag for using the regexp for parsing
-  //   flags += 'g';
-  // }
+
+  //if regexp definition does not have global set, do treat parsing as if onlyFirst was set to true
+  if(typeof disableGlobalFlag !== 'undefined'){
+    const enableGlobal = !disableGlobalFlag;
+    //NOTE if defined, disableGlobalFlag overwrites the global flag in any case (i.e. sets or unsets global flag accordingly)
+    if(enableGlobal !== parsedRe.flags.global){
+
+      if(process.env.verbose) console.log('  regexpParser: creating regexp, overwriting RegExp global flag with (raw for disabling?: '+disableGlobalFlag+'): ', enableGlobal, ', flags ', flags, ' -> ', (enableGlobal? flags+'g' : flags.replace(/g/i, '')));
+
+      if(enableGlobal){
+        flags += 'g';
+      } else {
+        flags = flags.replace(/g/i, '');
+      }
+    }
+  }
+
   return new RegExp(cleaned, flags);
 }
 
@@ -113,12 +126,10 @@ function createAttrPosFinderFunc(_tagName, _attrName, positionList, options){
   }
 
   const strRe = options.regexp;
-  // const patternGroup = parseFloat(options.patternGroup) || 0;
 
+  const re = parseRegExp(strRe, options.onlyFirst);//will throw error if it is not a valid RegExp literal
 
-  const re = parseRegExp(strRe);//, onlyFirst? false : true);//will throw error if it is not a valid RegExp literal
-
-  const onlyFirst = options.onlyFirst || !re.global;
+  const onlyFirst = !re.global;
 
   if(process.env.verbose) console.log('  regexpParser: created regexp (options.onlyFirst='+options.onlyFirst+'): ', re);
 
