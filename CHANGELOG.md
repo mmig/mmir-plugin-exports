@@ -1,4 +1,10 @@
 
+# Version 2.3.4
+
+Changes for `pluginexport` script:
+ * FEATURE: support / convert 2nd parameter for getBuildConfig() to duplicate dictionary if it is an array
+ * BUGFIX for _getBuildConfigTemplate(): must OR-operator (||) instead of logical OR (|)
+
 # Version 2.3.3
 
 Changes for `pluginexport` script:
