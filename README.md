@@ -402,6 +402,12 @@ Example:
 updateversion <file> --version-regexp "/@version \d+\.\d+\.\d+/i" --from-package
 ```
 
+For conveinance, `§VERSION§` can be used as a placeholder to match version strings
+that follow the [semantic versioning convention](https://semver.org/) (e.g. `1.0.4-alpha`):
+```bash
+updateversion <file> --version-regexp "/@version §VERSION§/i" --from-package
+```
+
 If capture groups are used in the regular expression, an additional argument allows
 to specify a replacement pattern which can contain references to the capture groups
 `$<group number>` (where the first group has number `1`).  
@@ -415,6 +421,11 @@ updateversion <file> --version-regexp "/(@version) \d+\.\d+\.\d+/i" --replace-pa
 which would a replacement string for the version number `<version>`: `"@version <version>"`
 (i.e. instead of replacing the complete match with the version number)
 
+Note that `§VERSION§` defines one capture groupt itself, e.g.
+```bash
+# in this example capture group $2 would contain the original (found) version string
+updateversion <file> --version-regexp "/(@version) §VERSION§( production)/i" --replace-pattern "$1 $0$3" --from-package
+```
 
 For conveinance, the script can be added to the `package.json` after installing
 the package, e.g. the following will update the version that is read from the

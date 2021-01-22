@@ -40,15 +40,17 @@ var cli = meow(`
                                       for matching  the version string in file, e.g.
                                       "/\*@version \d+/"
                                       (use quotes if the regexp contains spaces)
-                                      NOTE: by default the regular-expression
-                                            mechanism is not applied automatically
-                                            found common config files, i.e. the
-                                            following found files when parsing a
-                                            directory will not be processed using
-                                            the regexp method:
+                                    For conveinance, §VERSION§ can be used as a
+                                      placeholder to match version strings that follow
+                                      the semantic versioning convention (e.g. 1.0.4-alpha)
+                                    NOTE: by default the regular-expression mechanism
+                                          is not applied to automatically found
+                                          common config files, i.e. the following
+                                          found files when parsing a directory will
+                                          not be processed using the regexp method:
                                               package.json, package-lock.json,
                                               config.xml, plugin.xml
-                                            (these need to be specifically referenced)
+                                          (these need to be specifically referenced)
                                       DEFAULT: undefined
     --replace-pattern -p <pattern>  a replacement pattern for a matched regular expression:
                                       if defined, the pattern will be used instead of
@@ -63,6 +65,8 @@ var cli = meow(`
                                     then replacement string would be
                                        "* @version 1.2.4"
                                     (use quotes if the regexp contains spaces)
+                                    NOTE: the placeholder §VERSION§ will count as
+                                          one capture group (see --version-regexp)
                                     NOTE: this option only has effect, if option
                                           --version-regexp is specified!
                                       DEFAULT: undefined

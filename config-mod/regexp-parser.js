@@ -2,6 +2,25 @@
 const regexp = require('regexpp');
 const defaultOptions = {};
 
+// semver regexp:
+//
+// 1. orginal require min. "major.minor.patch", see https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+// ^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
+// 2. modified (allows to omit patch, i.e. min. "major.minor")
+// ^(0|[1-9]\d*)\.(0|[1-9]\d*)(?:\.(0|[1-9]\d*))?(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
+// 3. modified (allow omitting patch and occurance within a string)
+// \b(0|[1-9]\d*)\.(0|[1-9]\d*)(?:\.(0|[1-9]\d*))?(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?\b
+// 4. mofified (only single capturing group for complete version expression & allow omitting patch and occurance within a string)
+// \b((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:\.(?:0|[1-9]\d*))?(?:-(?:(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?:[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)\b
+// -> using variant 4:
+const strRegExpVersion = '\\b('+
+                            '(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)' +   // <major version>.<minor version>
+                            '(?:\\.(?:0|[1-9]\\d*))?' +             // patch version (MOD: optional)
+                            '(?:-(?:(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?'+ // pre-release description (optional)
+                            '(?:\\+(?:[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?'+ // build description (optional)
+                          ')\\b';
+const VERSION_REGEXP_PLACEHOLDER = /§VERSION§/g;
+
 function createParser(eventHandler, options){
   options = Object.assign({}, defaultOptions, options || {});
   const parser = {
@@ -55,9 +74,12 @@ function parseStream(readable, parserOrEventHandler, callback, options){
 }
 
 function parseRegExp(strRe, disableGlobalFlag){
-  const parsedRe = regexp.parseRegExpLiteral(strRe);//will throw error if it is not a valid RegExp literal
+  const strRegExp = strRe.replace(VERSION_REGEXP_PLACEHOLDER, strRegExpVersion);
+  const parsedRe = regexp.parseRegExpLiteral(strRegExp);//will throw error if it is not a valid RegExp literal
   const cleaned = parsedRe.pattern.raw.replace(/\\\//g, '/');//remove escaped slash that is required in regexp literals
   let flags = parsedRe.flags.raw;
+
+  //console.log('parse RegExp "'+strRe+'" -> ',  parsedRe)
 
   //if regexp definition does not have global set, do treat parsing as if onlyFirst was set to true
   if(typeof disableGlobalFlag !== 'undefined'){
