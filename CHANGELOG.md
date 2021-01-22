@@ -1,4 +1,9 @@
 
+# Version 2.3.3
+
+Changes for `pluginexport` script:
+ * BUGFIX do allow type `any` for plugin-config main entry/ies
+
 # Version 2.3.2
 
 Changes for `pluginexport` script:
