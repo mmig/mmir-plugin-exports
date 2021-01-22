@@ -151,12 +151,12 @@ function generateConfigsCode(configInfo){
     code = code.replace(/,\n$/, '\n');
     code += '  },\n';
 
+    if(configInfo.buildConfigs && configInfo.buildConfigs.length > 0){
+      code += generateBuildConfigs(configInfo.buildConfigs, 2);
+    }
+
   } else {
     code += doGenerateConfigsCode(configInfo, 2);
-  }
-
-  if(configInfo.buildConfigs && configInfo.buildConfigs.length > 0){
-    code += generateBuildConfigs(configInfo.buildConfigs, 2);
   }
 
   if(configInfo.enums && configInfo.enums.length > 0){
