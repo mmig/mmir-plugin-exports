@@ -1,4 +1,9 @@
 
+# Version 2.3.1
+
+Changes for `pluginexport` script:
+ * BUGFIX guard access to buildPluginNames
+
 # Version 2.3.0
 
 Changes for `updateversion` script:
