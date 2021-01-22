@@ -85,7 +85,7 @@ var _getBuildConfigTemplate = function _getBuildConfig(pluginName, buildConfigsM
     pluginName = void(0);
   }
   var buildConfigs = [];
-  var dupl = buildConfigsMap | {};
+  var dupl = buildConfigsMap || {};
   if(_buildConfig){
     var buildConfigMod = require(__dirname+'/'+_buildConfig);
     var buildConfig = buildConfigMod.buildConfigs;
