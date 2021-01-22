@@ -542,7 +542,7 @@ module.exports = {
           configInfo.buildConfigs = buildConfigs.all;
         }
 
-        if(buildPluginNames.size > 0){
+        if(buildPluginNames && buildPluginNames.size > 0){
           console.log('WARN export-utils: did specify plugin-specific build-configurations, but found no matching plugin specification ', Array.from(buildPluginNames));
         }
 
