@@ -23,6 +23,20 @@ var _joinTemplate = function _join(source, target, dict){
 };
 
 /**
+ * HELPER for converting a list into a set / "duplicate dictionary"
+ * @param       {Array} list a list that should be converted to a set / "duplicate dictionary"
+ * @returns     {Object} a dictionary (map) holding with enries (keys) from the list
+ *
+ */
+var _toDictTemplate = function _toDict(list){
+  var dict = {};
+  list.forEach(function(item){
+    dict[item] = true;
+  });
+  return dict;
+};
+
+/**
  * HELPER returns all entries for field <code>type</code>, (recursively) including the
  *        corresponding field from dependencies
  * @param       {"paths" | "workers" | "modules" | "dependencies" | "files"} type the field for which to gather entries
@@ -85,7 +99,7 @@ var _getBuildConfigTemplate = function _getBuildConfig(pluginName, buildConfigsM
     pluginName = void(0);
   }
   var buildConfigs = [];
-  var dupl = buildConfigsMap || {};
+  var dupl = Array.isArray(buildConfigsMap)? _toDict(buildConfigsMap) : buildConfigsMap || {};
   if(_buildConfig){
     var buildConfigMod = require(__dirname+'/'+_buildConfig);
     var buildConfig = buildConfigMod.buildConfigs;
@@ -165,6 +179,7 @@ function generateExportsCode(packageId, paths, workers, mainModules, dependencie
   code += ';\n';
 
   code += _joinTemplate.toString() + ';\n';
+  code += _toDictTemplate.toString() + ';\n';
   code += _getAllTemplate.toString() + ';\n';
   code += _getBuildConfigTemplate.toString() + ';\n';
 
