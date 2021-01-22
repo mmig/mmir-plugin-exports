@@ -1,4 +1,13 @@
 
+# Version 2.3.0
+
+Changes for `updateversion` script:
+ * FEATURE: support placeholder `§VERSION§` in option `--version-regexp` for matching (semantic) version strings
+ * BUGFIX: for `regexp` correctly support option `{onlyFirst: false}`
+
+Changes for `pluginexport` script:
+ * FEATURE: do support build-config definitions for multiple plugins
+
 # Version 2.2.3
 
 Changes for `pluginexport` script:
