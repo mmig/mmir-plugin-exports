@@ -297,18 +297,22 @@ function createConfigInfosFor(ast, mainConfigEntry, interfaces, allInterfaces){
 function getConfigTypes(configTypes, targetTypes){
   var size = targetTypes.length;
   configTypes.forEach(function(type){
-    var name = type.typeName.getText();
-    var found = false, target;
-    for(var i = 0; i < size; ++i){
-      target = targetTypes[i];
-      if(target.filter.test(name)){
-        found = true;
-        target.typeNames = addOrCreate(name, target.typeNames);
-        break;
+    if(type.typeName){
+      var name = type.typeName.getText();
+      var found = false, target;
+      for(var i = 0; i < size; ++i){
+        target = targetTypes[i];
+        if(target.filter.test(name)){
+          found = true;
+          target.typeNames = addOrCreate(name, target.typeNames);
+          break;
+        }
       }
-    }
-    if(!found && process.env.verbose) {
-      console.log('  export-utils: unknow type for main entry: got ', name, ', but expected type names matching with ', targetTypes.map(function(e){ return e.filter}));
+      if(!found && process.env.verbose) {
+        console.log('  export-utils: unknow type for main entry: got ', name, ', but expected type names matching with ', targetTypes.map(function(e){ return e.filter}));
+      }
+    } else if(process.env.verbose) {
+      console.log('  export-utils: undefined typeName (i.e. type any) for main entry: ', type);
     }
   });
   return targetTypes;
