@@ -1,4 +1,9 @@
 
+# Version 2.3.2
+
+Changes for `pluginexport` script:
+ * BUGFIX avoid duplicate generation of un-specific build-config in case of single plugin (i.e. not multiple plugins) defined
+
 # Version 2.3.1
 
 Changes for `pluginexport` script:
