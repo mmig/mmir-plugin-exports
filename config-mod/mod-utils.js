@@ -112,11 +112,26 @@ function createStringStream(str){
  *                              <pre>{
  *                                tagName: tagName,
  *                                attrName: string,
+ *                                nameStart: {line: number, column: number, offset?: number},
+ *                                nameEnd: {line: number, column: number, offset?: number}
  *                                attrValue: string,
  *                                valueStart: {line: number, column: number, offset?: number},
  *                                valueEnd: {line: number, column: number, offset?: number}
  *                              }
  *                              </pre>
+ *                              OR if XML was parsed and only a tagName was specified:
+ *                              <pre>{
+ *                                tagName: tagName,
+ *                                tagStart: {line: number, column: number, offset?: number},
+ *                                tagEnd: {line: number, column: number, offset?: number}
+ *                                tagValue: string,
+ *                                valueStart: {line: number, column: number, offset?: number},
+ *                                valueEnd: {line: number, column: number, offset?: number}
+ *                              }
+ *                              </pre>
+ * @param  {Options} [options] see options argument for {@link #replaceAttrValue}
+ *
+ * @see #replaceAttrValue
  */
 function getPositions(filePathOrContent, tagName, attrName, callback, options){
   options = _getOptionsWithDefaults(options);
@@ -127,24 +142,19 @@ function getPositions(filePathOrContent, tagName, attrName, callback, options){
     if(err){
       return callback(err);
     }
+    if(options && options.resolvePositionOffset){
+      list.forEach(function(pos){
+        for(var prop in pos){
+          if(pos[prop] && typeof pos[prop].line === 'number'){
+            pos[prop].offset = getOffset(pos[prop], content);
+          }
+        }
+      });
+    }
     callback(null, {content: content, positions: list});
   }, options);
 }
 
-/**
- * replace the value of a tag-attribute
- *
- * @param  {PositionResult} positionResult the position result (see #getPositions)
- * @param  {string} newAttrValue the new value for the attribute
- * @param  {Function} callback callback that will be invoked with the XML string
- *                              where the attribute value has been replaced, or
- *                              empty string if no replacement was done.
- * @param  {boolean} [onlyFirst] if <code>true</code>, only the first attribute's
- *                            that is found, will be replaced
- *
- * @function replaceAttrValue
- */
-//function replaceAttrValue(positionResult, newAttrValue, callback, options){
 /**
  * replace the value of a tag-attribute
  *
@@ -176,6 +186,10 @@ function getPositions(filePathOrContent, tagName, attrName, callback, options){
  *                            <code>"$<group number>"</code>, where the first group has number <code>1</code>,
  *                            and the <code>newAttrValue</code> can be referred to by <code>"$0"</code>
  *                              supported engines: "regexp"
+ * @param  {Options} [options.resolvePositionOffset] if <code>true</code>,
+ *                            all position results will include the <code>offset</code> property, i.e.
+ *                            <pre>{line: number, column: number, offset: number}</pre>
+ *                            (i.e. if necessary computed via helper <code>getOffset()</code>)
  */
 function replaceAttrValue(filePathOrContent, tagName, attrName, newAttrValue, callback, options){
 
