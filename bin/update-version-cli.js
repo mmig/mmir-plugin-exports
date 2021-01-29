@@ -42,7 +42,10 @@ var cli = meow(`
                                       (use quotes if the regexp contains spaces)
                                     For conveinance, §VERSION§ can be used as a
                                       placeholder to match version strings that follow
-                                      the semantic versioning convention (e.g. 1.0.4-alpha)
+                                      the semantic versioning convention (e.g. 1.0.4-dev), e.g.
+                                      "/(\*@version )§VERSION§/"
+                                      (for this example, the replacement pattern
+                                       -p "$1 $0" should be used)
                                     NOTE: by default the regular-expression mechanism
                                           is not applied to automatically found
                                           common config files, i.e. the following
@@ -58,7 +61,7 @@ var cli = meow(`
                                     The pattern may refer to capture groups by $<group number>
                                       where the first group has the number 1.
                                     The version itself can/should be refered with
-                                      "virtual" capture group $0.
+                                      by the "virtual" capture group $0.
                                     Example for version string "1.2.4" and
                                        -r "/(\* @version)\s+\d+/"
                                        -p "$1 $0"
@@ -67,7 +70,7 @@ var cli = meow(`
                                     (use quotes if the regexp contains spaces)
                                     NOTE: the placeholder §VERSION§ will count as
                                           one capture group (see --version-regexp)
-                                    NOTE: this option only has effect, if option
+                                    NOTE: this option only has an effect, if option
                                           --version-regexp is specified!
                                       DEFAULT: undefined
 
