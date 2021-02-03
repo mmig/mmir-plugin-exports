@@ -63,7 +63,7 @@ var cli = meow(`
                                     The version itself can/should be refered with
                                       by the "virtual" capture group $0.
                                     Example for version string "1.2.4" and
-                                       -r "/(\* @version\s+)\d+/"
+                                       -r "/(\* @version)\s+\d+/"
                                        -p "$1 $0"
                                     then replacement string would be
                                        "* @version 1.2.4"
