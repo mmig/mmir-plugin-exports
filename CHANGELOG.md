@@ -1,4 +1,15 @@
 
+# Version 2.4.0
+
+Changes for `updateversion` script:
+ * FEATURE: support (multi-)option `--regexp-target <file>` for multiple regular-expression target files in option
+            (options `--version-regexp` and `--replace-pattern` can also take multiple values)
+  * BUGFIX for regexp parser: correctly calculate match length (before was missing last matched character)
+
+Changes for XML modifier util:
+ * FEATURE: support finding positions for TAGs in XML files (before only combination of TAG and ATTRIBUTE was supported)  
+            NOTE only supported via (default) `sax-wasm` parser, no support for (optional) `saxes` parser
+
 # Version 2.3.4
 
 Changes for `pluginexport` script:
