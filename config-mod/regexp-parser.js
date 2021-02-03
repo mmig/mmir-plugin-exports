@@ -20,6 +20,8 @@ const strRegExpVersion = '\\b('+
                             '(?:\\+(?:[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?'+ // build description (optional)
                           ')\\b';
 const VERSION_REGEXP_PLACEHOLDER = /§VERSION§/g;
+// HELPER simple preliminary test, if regular expression string is a RegExp literal, i.e. should be wrapped with /<regular expression>/
+const REGEXP_LITERAL_START = /^\s*\//;
 
 function createParser(eventHandler, options){
   options = Object.assign({}, defaultOptions, options || {});
@@ -73,7 +75,19 @@ function parseStream(readable, parserOrEventHandler, callback, options){
   });
 }
 
+/**
+ * [parseRegExp description]
+ * @param  {string} strRe a RegExp literal as string (the string may contain "§VERSION§" as a placeholder for a valid semantic versioning expression)
+ * @param  {boolean} [disableGlobalFlag] OPTIONAL if specified: overwrite RegExp's global flag with this value
+ * @return {RegExp} a valid & initialized RegExp instance for strRe (where "§VERSION§" will be replaced with the corresponding regular expression)
+ *
+ * @throws Error if strRe is not a valid RegExp literal
+ */
 function parseRegExp(strRe, disableGlobalFlag){
+
+  if(!REGEXP_LITERAL_START.test(strRe)){
+    throw new SyntaxError('Invalid regular expression literal: RegExp literal must start with /, but starts with: '+strRe);
+  }
   const strRegExp = strRe.replace(VERSION_REGEXP_PLACEHOLDER, strRegExpVersion);
   const parsedRe = regexp.parseRegExpLiteral(strRegExp);//will throw error if it is not a valid RegExp literal
   const cleaned = parsedRe.pattern.raw.replace(/\\\//g, '/');//remove escaped slash that is required in regexp literals
