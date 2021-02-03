@@ -55,6 +55,29 @@ var cli = meow(`
                                               config.xml, plugin.xml
                                           (these need to be specifically referenced)
                                       DEFAULT: undefined
+    --regexp-target -t <file>       a target file-path for applying the RegExp
+                                      replacement:
+                                      allows to define multiple files for which
+                                      RegExp replacement will be applied.
+                                    Can be combined with specifying of multiple
+                                      RegExp (-r) and/or multiple replacement
+                                      patterns (-p):
+                                      if more than one of these options is specified,
+                                      they be applied to the target file (-t) in order
+                                      of appearance; if the number of -r and/or
+                                      -p options is less than the number of -t
+                                      options, the last specified -r (or -p)
+                                      option will be used for -t:
+                                        -t file1 -t file2 -p "$0" -r "§VERSION§" -r "\d+"
+                                      the first -r option will be applied to file1,
+                                        and the seconde -r option to file2, while
+                                        the replacement pattern -p will be used for
+                                        both target files.
+                                    NOTE: if a default target file is specified,
+                                            ${appName} [options] <file>
+                                          then the first -r and -p options will be
+                                          used for the default target file
+                                      DEFAULT: undefined
     --replace-pattern -p <pattern>  a replacement pattern for a matched regular expression:
                                       if defined, the pattern will be used instead of
                                       replacing the complete match.
@@ -80,8 +103,8 @@ var cli = meow(`
 
   Examples
     ${appName} ~/mmir-plugin-encoder-core/
-    ${appName} ~/mmir-plugin-encoder-core ~/mmir-plugin-decoder-core
-    ${appName} --set-version 1.2.6 --enable-package-lock ~/mmir-plugin-encoder-core/
+    ${appName} ../mmir-plugin-decoder-core ./
+    ${appName} --set-version 1.2.6 --enable-package-lock node_modules/mmir-plugin-encoder-core/
 `, {
   booleanDefault: undefined,
   flags: {
@@ -124,17 +147,20 @@ var cli = meow(`
     versionRegexp: {
       type: 'string',
       alias: 'r',
-      default: ''
+      default: [],
+      isMultiple: true
     },
-    // useRegexpForAll: {
-    //   type: 'boolean',
-    //   alias: 'a',
-    //   default: false
-    // },
+    regexpTarget: {
+      type: 'string',
+      alias: 't',
+      default: [],
+      isMultiple: true
+    },
     replacePattern: {
       type: 'string',
       alias: 'p',
-      default: ''
+      default: [],
+      isMultiple: true
     },
     verbose: {
       type: 'boolean',

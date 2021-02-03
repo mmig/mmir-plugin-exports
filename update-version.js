@@ -48,22 +48,40 @@ function updateVersion(target, opts, cb){
       loadConfigPromise = Promise.resolve([]);
     }
 
-    var fileType;
-    if(opts.versionRegexp){
-      fileType = 'text';
-    }//else: detect from file extension
+    var fileLoadPromises = [loadConfigPromise];
+    var fileType;//<- if unset: detect default target file from file extension
+    if(opts.versionRegexp && opts.versionRegexp.length > 0){
 
-    Promise.all([loadConfigPromise, _loadPromise(targetPath, fileType, opts)]).then(function(results){
+      // add specified regexp target files, if present:
+      if(opts.regexpTarget && opts.regexpTarget.length > 0){
+        for(var i=0,size=opts.regexpTarget.length; i < size; ++i){
+          fileLoadPromises.push(_loadPromise(opts.regexpTarget[i], 'text', opts, i));
+        }
+      } else {
+        // if regexp is specified but no regexp target-files: do force default target file to be parsed as 'text'
+        fileType = 'text';
+      }
+
+    }
+    //lastly, do add default target file:
+    fileLoadPromises.push(_loadPromise(targetPath, fileType, opts));
+
+    Promise.all(fileLoadPromises).then(function(results){
       const configs = results[0];
       if(configs.length === 0 && opts.fromPackage){
         //did not find package.json in same directory as the target file:
         // try to find package by traversing its directory upwards:
         getFromJson(targetDir, function(err, pkgResult){
           if(err) cb(err);
-          processConfigs(null, [pkgResult, results[1]]);
+          var fileList = results.slice();// copy list of results (i.e. target files, and empty configs at index 0)
+          fileList[0] = pkgResult;// <- replace empty configs list with found pkgResult
+          processConfigs(null, fileList);
         }, /*explicitly ignore that the package.json is not found in the specified directory (but somewhere further up): */ true);
       } else {
-        configs.push(results[1])
+        // add target-files to config list:
+        for(var i=1,size = result.length; i < size; ++i){
+          configs.push(results[i]);
+        }
         processConfigs(null, configs);
       }
     }).catch(function(err){
@@ -78,7 +96,26 @@ function updateVersion(target, opts, cb){
     if(opts.fromConfig || !opts.disableConfig) filterList.push('config.xml');
     if(opts.fromPlugin || !opts.disablePlugin) filterList.push('plugin.xml');
     if(opts.enablePackageLock) filterList.push('package-lock.json');
-    loadConfigFiles(targetPath, processConfigs, filterList);
+
+    var fileLoadPromises = [loadConfigFiles(targetPath, null, filterList)];
+
+    // add specified regexp target files, if present:
+    if(opts.versionRegexp && opts.versionRegexp.length > 0 && opts.regexpTarget && opts.regexpTarget.length > 0){
+      for(var i=0,size=opts.regexpTarget.length; i < size; ++i){
+        fileLoadPromises.push(_loadPromise(opts.regexpTarget[i], 'text', opts, i));
+      }
+    }
+
+    Promise.all(fileLoadPromises).then(function(results){
+      var configs = results[0];
+      // add target-files to config list:
+      for(var i=1,size=results.length; i < size; ++i){
+        configs.push(results[i]);
+      }
+      processConfigs(null, configs);
+    }).catch(function(err){
+      cb(err);
+    });;
   }
 
   function processConfigs(err, configInfos){
@@ -163,8 +200,8 @@ function updateVersion(target, opts, cb){
         onlyFirst: info.regexp? void(0) : true,// if regexp: let regexp "decide" if only first should be replaced (i.e. if global modifier is specified)
 
         //for regexp: if a replace-pattern was specified, then the regexp and replace-pattern must be supplied in the options:
-        regexp: info.regexp && opts.replacePattern? opts.versionRegexp : void(0),
-        replacePattern: info.regexp? opts.replacePattern : void(0),
+        regexp: info.regexp && info.replacePattern? info.regexp : void(0),
+        replacePattern: info.regexp? info.replacePattern : void(0),
       });
     });
 
@@ -264,16 +301,21 @@ function _fileType(filePath){
  * @param       {string} filePath the config file path
  * @param       {"json" | "xml" | "text"} [type] if omitted will be detected from file extension
  * @param       {MeowOptions} [opts] command line options (MUST be specified, if type is "text")
+ * @param       {number} [regExpTargetIndex] if target file is "text" and the RegExp option(s) are specified:
+ *                                           the preferred index of the RegExp option(s); if there are none
+ *                                           at the preferred index, the RegExp option(s) of the last (maximal)
+ *                                           index will be used
+ *                                           DEFAULT: 0 (i.e. first option(s))
  * @return      {Promise<VersionPositionResult>} the loading & parsing result, see #_posToRes
  */
-function _loadPromise(filePath, type, opts){
+function _loadPromise(filePath, type, opts, regExpTargetIndex){
   type = type || _fileType(filePath);
   return new Promise(function(resolve, reject){
     const cb = function(err, res){
       if(err) reject(err)
       else resolve(res);
     };
-    type === 'xml'? getFromXml(filePath, cb) : type === 'json'? getFromJson(filePath, cb) : getTextFile(filePath, opts, cb);
+    type === 'xml'? getFromXml(filePath, cb) : type === 'json'? getFromJson(filePath, cb) : getTextFile(filePath, opts, cb, regExpTargetIndex);
   });
 }
 
@@ -309,6 +351,8 @@ function _exists(dir, file, filter, isExludeFilter){
  * @param       {PositionResult} posResult the position result
  * @param       {"plugin" | "project" | "package"} type the type of the config file
  * @param       {string} filePath the path of the config file
+ * @param       {string} [regExp] OPTIONAL the regular expression as string (should be specified in case of type is "text")
+ * @param       {string} [regExpPattern] OPTIONAL the replacement pattern for the regular expression as string (should be specified in case of type is "text")
  * @return      the position normlized position result:
  *              <pre>{
  *                value: string // the version value
@@ -317,11 +361,12 @@ function _exists(dir, file, filter, isExludeFilter){
  *                path: string // the file path of the config file
  *                ext: "json" | "xml" | string // the file extension (without dot)
  *                lock: boolean // true if file is a package-lock file
- *                regexp: boolean // if regular-expression mechanism (instead of "real" parsing) was used (-> true, if type is "text")
+ *                regexp: false | string // if regular-expression mechanism (instead of "real" parsing) was used (-> should be the regular expression as string, if type is "text")
+ *                replacePattern: false | string // if regular-expression mechanism (instead of "real" parsing) was used (-> the replace pattern as string, if type is "text")
  *                positions: Position[]
  *              }</pre>
  */
-function _posToRes(error, posResult, type, filePath, fileExt){
+function _posToRes(error, posResult, type, filePath, fileExt, regExp, regExpPattern){
   if(error){
     return null;
   }
@@ -341,7 +386,8 @@ function _posToRes(error, posResult, type, filePath, fileExt){
     path: filePath,
     ext: fileExt,
     lock: /-lock\.json$/.test(path.basename(filePath)),
-    regexp: type === 'text'
+    regexp: regExp || false,
+    replacePattern: regExpPattern || false
   };
 }
 
@@ -402,15 +448,31 @@ function getFromXml(xmlFilePath, cb){
   });
 }
 
-function getTextFile(textFilePath, options, cb){
+/**
+ * load text file and search for RegExp matchings
+ * @param  {[type]} textFilePath the file-path to the targeted text file
+ * @param  {MeowOptions} options the command line options (NOTE: should include at least one --version-regexp and may include --replace-pattern)
+ * @param  {Function} cb callback that will be triggered after loading and searching for RegExp matchings
+ * @param  {number} [regExpTargetIndex] if target file is "text" and the RegExp option(s) are specified:
+ *                                           the preferred index of the RegExp option(s); if there are none
+ *                                           at the preferred index, the RegExp option(s) of the last (maximal)
+ *                                           index will be used
+ *                                           DEFAULT: 0 (i.e. first option(s))
+ * @return {[type]} [description]
+ */
+function getTextFile(textFilePath, options, cb, regExpTargetIndex){
 
+  regExpTargetIndex = typeof regExpTargetIndex === 'number' && regExpTargetIndex > 0? regExpTargetIndex : 0;
+  var regExp = options.versionRegexp[regExpTargetIndex] || options.versionRegexp[options.versionRegexp.length - 1];
+  var replacePattern = options.replacePattern[regExpTargetIndex] || options.replacePattern[options.replacePattern.length - 1];
   var ext = path.extname(textFilePath);
+
   modUtil.getPositions(textFilePath, null, null, function(err, posResult){
-    cb(err, _posToRes(err, posResult, 'text', textFilePath, ext));
+    cb(err, _posToRes(err, posResult, 'text', textFilePath, ext, regExp, replacePattern));
   }, {
     parser: modUtil.getParserFor('regexp'),
-    regexp: options.versionRegexp,
-    replacePattern: options.replacePattern,
+    regexp: regExp,
+    replacePattern: replacePattern,
     // onlyFirst: true
   });
 }
