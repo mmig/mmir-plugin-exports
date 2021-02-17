@@ -16,12 +16,14 @@ var templateDefineDeps = '/*require-orig-deps*/';
 var templateDefineContent = '/*orig-define-content*/';
 
 var templatePostContent = '/*post-content*/';
+var templateOriginalContent = '/*orig-content*/';
 
 var pluginTemplates = {
   media: {
     exportedName: 'newMediaPlugin',
     defineTemplatePath: 'compat-media-define-template.js',
     contentTemplatePath: 'compat-media-content-template.js',
+    postContentTemplatePath: '',
     createMain: function(parsedDefineCall, code, targetInfo){
       return createMainMedia(parsedDefineCall, code, targetInfo, this);
     }
@@ -48,9 +50,17 @@ var pluginTemplates = {
     exportedName: '',
     defineTemplatePath: 'compat-flat-define-template.js',
     contentTemplatePath: 'compat-flat-content-template.js',
+    postContentTemplatePath: '',
     createMain: function(parsedDefineCall, code, targetInfo){
       return createMainSimple(parsedDefineCall, code, targetInfo, this);
     }
+  },
+  none: {
+    exportedName: '',
+    defineTemplatePath: '',
+    contentTemplatePath: '',
+    postContentTemplatePath: '',
+    createMain: null
   }
 }
 
@@ -76,7 +86,6 @@ function loadTemplates(templateInfo){
     templateInfo.contentTemplate = loadTemplate(templateInfo.contentTemplatePath);
   }
   if(!templateInfo.postContentTemplate){
-    console.log('templateInfo', templateInfo)
     templateInfo.postContentTemplate = templateInfo.postContentTemplatePath? loadTemplate(templateInfo.postContentTemplatePath) : '';
   }
 }
@@ -138,8 +147,6 @@ function createMainSimple(defineCall, code, _targetInfo, templateInfo){
   var compatContentTemplate = templateInfo.contentTemplate;
   var compatPostContentTemplate = templateInfo.postContentTemplate;
 
-  console.log('compatPostContentTemplate ', compatPostContentTemplate)
-
   var isFirstFunc = true;
   var deps;
   var errFunc = '';
@@ -193,11 +200,21 @@ function createMainSimple(defineCall, code, _targetInfo, templateInfo){
   );
 }
 
-function createCompatCode(code, templateInfo, targetInfo){
+function createCompatCode(code, templateInfo, targetInfo, packageRoot){
+
+  var type = targetInfo.type;
+  if(type === 'none'){
+    if(!targetInfo.template){
+      throw new Error('Must provide path for module-none template file');
+    }
+    var templatePath = path.isAbsolute(targetInfo.template)? targetInfo.template : path.join(packageRoot, targetInfo.template);
+    var customNoneTemplate = fs.readFileSync(templatePath, 'utf8');
+    return customNoneTemplate.replace(templateOriginalContent, code);
+  }
 
   var expName = targetInfo.exportedName || templateInfo.exportedName;
   if(!expName){
-    throw new Error('Must proved exported name');
+    throw new Error('Must provide exported name');
   }
 
   var ast = esprima.parse(code, {range: true});
@@ -223,7 +240,7 @@ function createCompatCode(code, templateInfo, targetInfo){
   return compatCode;
 }
 
-function createCompatFor(inputFile, outName, templateInfo, targetInfo){
+function createCompatFor(inputFile, outName, templateInfo, targetInfo, packageRoot){
 
   templateInfo = templateInfo || pluginTemplates.media;
   var code = fs.readFileSync(inputFile, 'utf8');
@@ -232,7 +249,7 @@ function createCompatFor(inputFile, outName, templateInfo, targetInfo){
   outName = outName || (path.basename(inputFile, '.js') + 'Compat.js');
   var outputFile = path.isAbsolute(outName)? outName : path.join(ipath, outName);
 
-  var compatCode = createCompatCode(code, templateInfo, targetInfo);
+  var compatCode = createCompatCode(code, templateInfo, targetInfo, packageRoot);
 
   fs.writeFileSync(outputFile, compatCode);
   return outputFile;
@@ -254,8 +271,8 @@ function createCompatForAll(pluginPackageDir){
       type = targetItem.type;
       templateInfo = pluginTemplates[type];
       //if(process.env.verbose) console.log('createCompatFor(',path.resolve(packageRoot, source), path.resolve(packageRoot, target),' ...');
-      result = createCompatFor(path.resolve(packageRoot, source), path.resolve(packageRoot, target), templateInfo, targetItem);
-      if(process.env.verbose) console.log('  createCompatFor('+source+', '+target+', '+(targetItem.exportedName || templateInfo.exportedName)+') -> ', result);
+      result = createCompatFor(path.resolve(packageRoot, source), path.resolve(packageRoot, target), templateInfo, targetItem, packageRoot);
+      if(process.env.verbose) console.log('  createCompatFor("'+source+'", "'+target+'", "'+(targetItem.exportedName || templateInfo.exportedName)+'", "'+type+'") -> ', result);
       createdFiles.push(result);
     }
   }

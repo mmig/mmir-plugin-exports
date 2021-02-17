@@ -300,13 +300,18 @@ running `createcompat <dir>`
 
 if run with a directory as input:  
 parses the `package.json` of the plugin and
- * for each entry in <custom field> mmir.compat.{<name>: <entry>} a compatibility is created:
-   * <name>: the source file (relative path within the package)
-   * <entry>: the details for generating the compatibility module with {file: <file path>, type: <module type>, exportedName?: string}:
+ * for each entry in `<custom field> mmir.compat.{<name>: <entry>}` a compatibility is created:
+   * `<name>`: the source file (relative path within the package)
+   * `<entry>`: the details for generating the compatibility module with `{file: <file path>, type: <module type>, exportedName?: string}`:
      * file: the target file path where the created module will be stored (within the package)
-     * type: the module type, one of "media" | "asr" | "tts" | "custom" (DEFAULT: "media")
+     * type: the module type, one of `"media" | "asr" | "tts" | "custom" | "none"` (DEFAULT: "media")
      * exportedName: if type is "custom", the name for the (global) variable must be specified, to which the module will be exported
-  * example: `mmir.compat = {"./www/recorderExt.js": {"file": "./res/recorderExtCompat.js", "type": "custom", "exportedName": "Recorder"}}`
+     * template: if type is "none", the template file into which the original content will be inserted
+       (use `/*orig-content*/` as placeholder in the template file to indicate, where the original file content should be inserted)
+  * examples:
+    * `mmir.compat = {"./www/voiceRecorder.js": {"file": "./res/voiceRecorderCompat.js", "type": "custom", "exportedName": "Recorder"}}`
+    * `mmir.compat = {"./www/webAudioInput.js": {"file": "./www/alt/webAudioInputCompat.js","type": "media"}`
+    * `mmir.compat = {"./www/encoder.js": {"file": "./www/alt/encoderCompat.js","type": "none","template":"./res/enconder-compat-template.js"}`
 
 ## `dtsdownlevel`: Creating Compatibility Typings
 
