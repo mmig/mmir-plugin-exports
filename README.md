@@ -317,7 +317,7 @@ By default, the `dtsdownlevel` script will copy the downleveled typings to `<dir
 backwards compatibility, by adding an entry to the `package.json` file, e.g. for the input typings directory `lib`:
 ```
   "typesVersions": {
-    "<3.8": {
+    "<3.9": {
       "lib/*": [
         "lib/ts3.6/*"
       ]
