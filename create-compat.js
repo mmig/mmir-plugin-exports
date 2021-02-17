@@ -15,6 +15,8 @@ var templateDefineArgs = '/*require-orig-define*/';
 var templateDefineDeps = '/*require-orig-deps*/';
 var templateDefineContent = '/*orig-define-content*/';
 
+var templatePostContent = '/*post-content*/';
+
 var pluginTemplates = {
   media: {
     exportedName: 'newMediaPlugin',
@@ -28,6 +30,7 @@ var pluginTemplates = {
     exportedName: 'newWebAudioAsrImpl',
     defineTemplatePath: 'compat-flat-define-template.js',
     contentTemplatePath: 'compat-flat-content-template.js',
+    postContentTemplatePath: 'compat-flat-post-content-asr-template.js',
     createMain: function(parsedDefineCall, code, targetInfo){
       return createMainSimple(parsedDefineCall, code, targetInfo, this);
     }
@@ -36,6 +39,7 @@ var pluginTemplates = {
     exportedName: 'newWebAudioTtsImpl',
     defineTemplatePath: 'compat-flat-define-template.js',
     contentTemplatePath: 'compat-flat-content-template.js',
+    postContentTemplatePath: 'compat-flat-post-content-tts-template.js',
     createMain: function(parsedDefineCall, code, targetInfo){
       return createMainSimple(parsedDefineCall, code, targetInfo, this);
     }
@@ -71,6 +75,10 @@ function loadTemplates(templateInfo){
   if(!templateInfo.contentTemplate){
     templateInfo.contentTemplate = loadTemplate(templateInfo.contentTemplatePath);
   }
+  if(!templateInfo.postContentTemplate){
+    console.log('templateInfo', templateInfo)
+    templateInfo.postContentTemplate = templateInfo.postContentTemplatePath? loadTemplate(templateInfo.postContentTemplatePath) : '';
+  }
 }
 
 function createMainMedia(defineCall, code, _targetInfo, templateInfo){
@@ -78,6 +86,7 @@ function createMainMedia(defineCall, code, _targetInfo, templateInfo){
   loadTemplates(templateInfo);
   var compatDefineTemplate = templateInfo.defineTemplate;
   var compatContentTemplate = templateInfo.contentTemplate;
+  var compatPostContentTemplate = templateInfo.postContentTemplate;
 
   var isFirstFunc = true;
   var defineCallArgs = defineCall.expression.arguments.map(function(item){
@@ -113,7 +122,12 @@ function createMainMedia(defineCall, code, _targetInfo, templateInfo){
 
   var rawArgs = defineCallArgs.join(', ');
   var args = defineCallArgs.length > 1? 'require(' + rawArgs + ');' : '(' + rawArgs + ')();';
-  return compatDefineTemplate.replace(templateDefineArgs, args);
+
+  return compatDefineTemplate.replace(
+    templateDefineArgs, args
+  ).replace(
+    templatePostContent, compatPostContentTemplate
+  );
 }
 
 
@@ -122,6 +136,9 @@ function createMainSimple(defineCall, code, _targetInfo, templateInfo){
   loadTemplates(templateInfo);
   var compatDefineTemplate = templateInfo.defineTemplate;
   var compatContentTemplate = templateInfo.contentTemplate;
+  var compatPostContentTemplate = templateInfo.postContentTemplate;
+
+  console.log('compatPostContentTemplate ', compatPostContentTemplate)
 
   var isFirstFunc = true;
   var deps;
@@ -166,7 +183,14 @@ function createMainSimple(defineCall, code, _targetInfo, templateInfo){
   //if(process.env.verbose) console.log('replace define call SIMPLE: ', reqExpr, defineBody, errFunc);
 
   var main = errFunc? 'try{\n' + defineBody + '\n} catch(err){('+errFunc+')(err);};' : defineBody;
-  return compatDefineTemplate.replace(templateDefineDeps, reqExpr).replace(templateDefineArgs, main);
+
+  return compatDefineTemplate.replace(
+    templateDefineDeps, reqExpr
+  ).replace(
+    templateDefineArgs, main
+  ).replace(
+    templatePostContent, compatPostContentTemplate
+  );
 }
 
 function createCompatCode(code, templateInfo, targetInfo){
