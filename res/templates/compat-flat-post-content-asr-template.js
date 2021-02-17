@@ -1,28 +1,17 @@
 
-    // already set var(s): exported
-    if(typeof exported === 'function'){
-      var expArgsLen = exported.length;
-      if(expArgsLen >= 1){
+    // convert to earlier versions of mmir-plugin-encoder-cord (< 1.x): wrap in factory function
+    if(typeof exported !== 'function'){
 
-        if(expArgsLen > 2){
-          console.warn('unknown plugin factory function parameters: expected 0 to 2 parameters, but got ' + expArgsLen);
+      var _exported = exported;
+      var _exportedConstructor = _exported.constructor;
+      exported = function(closeMicFunc, _defaultLogger) {
+        var inst = new _exportedConstructor();
+        for(var prop in _exported){
+          inst[prop] = _exported[prop];
         }
-
-        // create wrapper for injecting closeMicFunc
-        var closeMicFunc;
-        var closeMicFuncWrapper = function(){
-          closeMicFunc();
-        };
-        exported = exported(closeMicFuncWrapper, expArgsLen === 1? void(0) : require('mmirf/logger').create());
-
-        // create "injection" code for closeMicFunc via deprecated hook _init(closeMicFunc)
-        exported.__compat_init = exported._init;
-        exported._init = function(_closeMicFunc){
-          closeMicFunc = _closeMicFunc;
-          exported.__compat_init && exported.__compat_init(_closeMicFunc);
+        if(inst._init){
+          inst._init(closeMicFunc);
         }
-
-      } else {
-        exported = exported();
-      }
+        return inst;
+      };
     }
