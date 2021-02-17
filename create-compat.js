@@ -23,7 +23,7 @@ var pluginTemplates = {
     exportedName: 'newMediaPlugin',
     defineTemplatePath: 'compat-media-define-template.js',
     contentTemplatePath: 'compat-media-content-template.js',
-    postContentTemplatePath: '',
+    postContentTemplatePath: 'compat-media-post-content-template.js',
     createMain: function(parsedDefineCall, code, targetInfo){
       return createMainMedia(parsedDefineCall, code, targetInfo, this);
     }
