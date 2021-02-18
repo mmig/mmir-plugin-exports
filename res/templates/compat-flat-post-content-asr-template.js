@@ -1,5 +1,6 @@
 
-    // convert to earlier versions of mmir-plugin-encoder-cord (< 1.x): wrap in factory function
+    // backwards compatiblity for asr-plugins that target earlier versions of mmir-plugin-encoder-core (< 1.x):
+    // wrap exported object in factory function
     if(typeof exported !== 'function'){
 
       var _exported = exported;
