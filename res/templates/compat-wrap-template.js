@@ -48,11 +48,16 @@
 		}
 	}
 
+	var mediaManager = _req((_isLegacyMode3? '': 'mmirf/') +'mediaManager');
 	if(_isDowngradeMode6) {
-		//downgrade v7 to plugins targeting v6 or below: mediaManager.loadPlugin -> mediaManager.loadFile
-		var mediaManager = _req((_isLegacyMode3? '': 'mmirf/') +'mediaManager');
+		//downgrade mmir v7 to plugins targeting v6 or below: mediaManager.loadPlugin -> mediaManager.loadFile
 		if(!mediaManager.loadFile && mediaManager.loadPlugin){
 			mediaManager.loadFile = mediaManager.loadPlugin;
+		}
+	} else {
+		//upgrade mmir v6 and below for plugins that target mmir v7: mediaManager.loadFile -> mediaManager.loadPlugin
+		if(!mediaManager.loadPlugin && mediaManager.loadFile){
+			mediaManager.loadPlugin = mediaManager.loadFile;
 		}
 	}
 
