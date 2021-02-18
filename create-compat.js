@@ -25,6 +25,7 @@ var pluginTemplates = {
     contentTemplatePath: 'compat-media-content-template.js',
     postContentTemplatePath: 'compat-media-post-content-template.js',
     createMain: function(parsedDefineCall, code, targetInfo){
+
       return createMainMedia(parsedDefineCall, code, targetInfo, this);
     }
   },
@@ -34,6 +35,18 @@ var pluginTemplates = {
     contentTemplatePath: 'compat-flat-content-template.js',
     postContentTemplatePath: 'compat-flat-post-content-asr-template.js',
     createMain: function(parsedDefineCall, code, targetInfo){
+
+      var templateInfo = Object.assign({}, this);
+
+      if(targetInfo.async){
+        templateInfo.defineTemplatePath = 'compat-flat-async-define-template.js';
+        templateInfo.postContentTemplatePath = 'compat-flat-async-post-content-template.js';
+        templateInfo.defineTemplate = null;
+        templateInfo.postContentTemplate = null;
+
+        return createMainMedia(parsedDefineCall, code, targetInfo, templateInfo);
+      }
+
       return createMainSimple(parsedDefineCall, code, targetInfo, this);
     }
   },
@@ -43,6 +56,18 @@ var pluginTemplates = {
     contentTemplatePath: 'compat-flat-content-template.js',
     postContentTemplatePath: 'compat-flat-post-content-tts-template.js',
     createMain: function(parsedDefineCall, code, targetInfo){
+
+      var templateInfo = Object.assign({}, this);
+
+      if(targetInfo.async){
+        templateInfo.defineTemplatePath = 'compat-flat-async-define-template.js';
+        templateInfo.postContentTemplatePath = 'compat-flat-async-post-content-template.js';
+        templateInfo.defineTemplate = null;
+        templateInfo.postContentTemplate = null;
+
+        return createMainMedia(parsedDefineCall, code, targetInfo, templateInfo);
+      }
+
       return createMainSimple(parsedDefineCall, code, targetInfo, this);
     }
   },
@@ -52,6 +77,18 @@ var pluginTemplates = {
     contentTemplatePath: 'compat-flat-content-template.js',
     postContentTemplatePath: '',
     createMain: function(parsedDefineCall, code, targetInfo){
+
+      var templateInfo = Object.assign({}, this);
+
+      if(targetInfo.async){
+        templateInfo.defineTemplatePath = 'compat-flat-async-define-template.js';
+        templateInfo.postContentTemplatePath = 'compat-flat-async-post-content-template.js';
+        templateInfo.defineTemplate = null;
+        templateInfo.postContentTemplate = null;
+
+        return createMainMedia(parsedDefineCall, code, targetInfo, templateInfo);
+      }
+
       return createMainSimple(parsedDefineCall, code, targetInfo, this);
     }
   },
@@ -90,17 +127,56 @@ function loadTemplates(templateInfo){
   }
 }
 
-function createMainMedia(defineCall, code, _targetInfo, templateInfo){
+function createMainMedia(defineCall, code, targetInfo, templateInfo){
 
   loadTemplates(templateInfo);
   var compatDefineTemplate = templateInfo.defineTemplate;
   var compatContentTemplate = templateInfo.contentTemplate;
   var compatPostContentTemplate = templateInfo.postContentTemplate;
 
+  var additionalDependencies = [];
   var isFirstFunc = true;
   var defineCallArgs = defineCall.expression.arguments.map(function(item){
 
-    if(isFirstFunc && item.type === 'FunctionExpression'){
+    if(isFirstFunc && item.type === 'ArrayExpression'){
+
+      var isReplaced = false;
+      var deps;
+      if(targetInfo.dependencyMapping){
+        var deps = item.elements.map(function(el){
+          // console.log(el)
+          var repl = targetInfo.dependencyMapping[el.value];
+          if(repl){
+            isReplaced = true;
+            return el.value !== el.raw? JSON.stringify(repl) : repl;
+          }
+          return el.raw;
+        });
+
+      }
+
+      if(targetInfo.additionalDependencies){
+
+        isReplaced = true;
+        var addDeps = targetInfo.additionalDependencies;
+        deps = deps || [];
+
+        for(var depName in addDeps){
+          deps.push(JSON.stringify(addDeps[depName]));
+          additionalDependencies.push(depName);
+        }
+      }
+
+      if(isReplaced){
+        return '[' + deps.join(',') + ']';
+      }
+
+      // console.log(code.substring.apply(code, item.range));
+
+      return code.substring.apply(code, item.range);
+
+    } else if(isFirstFunc && item.type === 'FunctionExpression'){
+
       isFirstFunc = false;
 
       var defineCallBody = item.body.range;
@@ -116,8 +192,12 @@ function createMainMedia(defineCall, code, _targetInfo, templateInfo){
       // return [params[0].range[0], params[params.length - 1].range[1]];
 
       var hasDeps = params && params.length > 0;
+      var strAddDeps = additionalDependencies.join(',');
       var factoryFunc = 'function '+(item.id && item.id.name? item.id.name : '') +
-            '(' + (!hasDeps? '' : code.substring(params[0].range[0], params[params.length - 1].range[1])) + '){' +
+            '(' +
+                (!hasDeps? '' : code.substring(params[0].range[0], params[params.length - 1].range[1])) +
+                (!strAddDeps? '' : (hasDeps? ',' : '') + strAddDeps) +
+            '){' +
               compatContentTemplate.replace(templateDefineContent, code.substring.apply(code, defineCallBody)) +
             '}';
 
@@ -140,7 +220,7 @@ function createMainMedia(defineCall, code, _targetInfo, templateInfo){
 }
 
 
-function createMainSimple(defineCall, code, _targetInfo, templateInfo){
+function createMainSimple(defineCall, code, targetInfo, templateInfo){
 
   loadTemplates(templateInfo);
   var compatDefineTemplate = templateInfo.defineTemplate;
@@ -156,7 +236,14 @@ function createMainSimple(defineCall, code, _targetInfo, templateInfo){
 
     if(isFirstFunc && item.type === 'ArrayExpression'){
 
-      deps = item.elements.map(function(el){ return el.raw});
+      var hasDepsMap = targetInfo.dependencyMapping;
+      deps = item.elements.map(function(el){
+        var repl = hasDepsMap? targetInfo.dependencyMapping[el.value] : null;
+        if(repl){
+          return el.value !== el.raw? JSON.stringify(repl) : repl;
+        }
+        return el.raw;
+      });
 
     } else if(isFirstFunc && item.type === 'FunctionExpression'){
 
@@ -169,6 +256,13 @@ function createMainSimple(defineCall, code, _targetInfo, templateInfo){
         params.forEach(function(depVar, i){
           reqExpr += '  var '+depVar.name+' = require('+deps[i]+');\n';
         });
+      }
+
+      if(targetInfo.additionalDependencies){
+        var addDeps = targetInfo.additionalDependencies;
+        for(var depName in addDeps){
+          reqExpr += '  var '+depName+' = require('+JSON.stringify(addDeps[depName])+');\n';
+        }
       }
 
       // console.log('define call: params ', params[0].range[0], params[params.length - 1].range[1]);

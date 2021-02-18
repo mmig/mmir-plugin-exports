@@ -303,11 +303,20 @@ parses the `package.json` of the plugin and
  * for each entry in `<custom field> mmir.compat.{<name>: <entry>}` a compatibility is created:
    * `<name>`: the source file (relative path within the package)
    * `<entry>`: the details for generating the compatibility module with `{file: <file path>, type: <module type>, exportedName?: string}`:
-     * file: the target file path where the created module will be stored (within the package)
-     * type: the module type, one of `"media" | "asr" | "tts" | "custom" | "none"` (DEFAULT: "media")
-     * exportedName: if type is "custom", the name for the (global) variable must be specified, to which the module will be exported
-     * template: if type is "none", the template file into which the original content will be inserted
+     * `file`: the target file path where the created module will be stored (within the package)
+     * `type`: the module type, one of `"media" | "asr" | "tts" | "custom" | "none"` (DEFAULT: "media")
+     * `exportedName`: if `type` is "custom", the name for the (global) variable must be specified, to which the module will be exported
+     * `template`: if `type` is "none", the template file into which the original content will be inserted
        (use `/*orig-content*/` as placeholder in the template file to indicate, where the original file content should be inserted)
+     * `async`: _(OPTIONAL)_ in case `type` is not `"media"` this boolean value indicates if the plugin's `define` dependencies need to be required asynchronously (i.e. have not been required before; in case of `type` `"media"` the dependencies will already be required asynchronously)  
+       if specified, an async-wrapper will be generated, but:  
+       [WARNING] note that the compatibility code will produces errors, if the exported object/function of plugin is immediately used
+                 (i.e. works only if exported object/function is used asynchronously)
+     * `dependencyMapping`: _(OPTIONAL)_ mapping for dependencies (in plugin's `define` statement): will be replaced in the generated compatibility code  
+       example: `dependencyMapping: {"mmirf/events": "./eventEmitter.js"}`
+     * `additionalDependencies`: _(OPTIONAL)_ map of additional dependencies (for the plugin's `define` statement): `{<variable name>: <dependency>}` will be appended to the existing dependencies in the generated compatibility code  
+       example: `additionalDependencies: {"eventWrapper": "./eventEmitterWrapper.js"}`  
+       NOTE `additionalDependencies` are not subject to the replacement of `dependencyMapping`
   * examples:
     * `mmir.compat = {"./www/voiceRecorder.js": {"file": "./res/voiceRecorderCompat.js", "type": "custom", "exportedName": "Recorder"}}`
     * `mmir.compat = {"./www/webAudioInput.js": {"file": "./www/alt/webAudioInputCompat.js","type": "media"}`
