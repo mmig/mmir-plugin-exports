@@ -57,7 +57,8 @@
 				success = function(){
 					deps = getId(deps);
 					for(var i=deps.length-1; i >= 0; --i){
-						if(replacedMod[deps[i]]) arguments[i] = replacedMod[deps[i]];
+						if(deps[i]==='require') arguments[i] = _req;
+						else if(replacedMod[deps[i]]) arguments[i] = replacedMod[deps[i]];
 					}
 					_success.apply(null, arguments);
 				};
@@ -110,15 +111,18 @@
 	} else {
 
 		if (typeof define === 'function' && define.amd) {
-				// AMD. Register as an anonymous module.
-				define(function () {
-						return factory(_req);
-				});
+			// AMD. Register as an anonymous module.
+			define(['require'], function (require) {
+				//replace with modified require if necessary;
+				if(__req) __req = require;
+				else if(___req) ___req = require;
+				return factory(_req);
+			});
 		} else if (typeof module === 'object' && module.exports) {
-				// Node. Does not work with strict CommonJS, but
-				// only CommonJS-like environments that support module.exports,
-				// like Node.
-				module.exports = factory(_req);
+			// Node. Does not work with strict CommonJS, but
+			// only CommonJS-like environments that support module.exports,
+			// like Node.
+			module.exports = factory(_req);
 		}
 	}
 
