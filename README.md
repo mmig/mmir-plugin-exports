@@ -203,7 +203,7 @@ Example with build-config creator function:
    export const buildConfigLibDependencies: PluginExportBuildConfigCreator = function(pluginConfig, runtimeConfig, pluginBuildConfigs) {
      if(pluginConfig && pluginConfig.encoder === 'wav'){
        return {
-         includeModules: ['mmir-plugin-encoder-core/workers/recorderWorkerExt']
+         includeModules: ['mmir-plugin-encoder-core/workers/wavEncoder']
        }
      }
    };
@@ -226,7 +226,7 @@ Example with build-config creator function:
      function(pluginConfig, _runtimeConfig, _pluginBuildConfigs) {
        if(pluginConfig && pluginConfig.encoder === 'wav'){
          return {
-           includeModules: ['mmir-plugin-encoder-core/workers/recorderWorkerExt']
+           includeModules: ['mmir-plugin-encoder-core/workers/wavEncoder']
          }
        }
      },
@@ -288,7 +288,7 @@ const simpleBuildConfigLibDependencies: WebpackAppConfig = {
 export const buildConfigLibDependencies: PluginExportBuildConfigCreator = function(pluginConfig, _runtimeConfig, _pluginBuildConfigs) {
   if(pluginConfig && pluginConfig.encoder === 'wav'){
     return {
-      includeModules: ['mmir-plugin-encoder-core/workers/recorderWorkerExt']
+      includeModules: ['mmir-plugin-encoder-core/workers/wavEncoder']
     }
   }
 };
