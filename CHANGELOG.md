@@ -1,4 +1,11 @@
 
+# Version 2.5.1
+
+Changes for `createplugincompat` script:
+  * BUGFIX for compat-wrapper: fix injected implementation for mmir.conf.get(propertyName, defaultValue, setDefaultIfUnset)
+    * properly retrieve value and set as default if unset (and setDefaultIfUnset is TRUTHY)
+    * if propertyName is an Array, do use copy since older mmir-lib version will modify the array
+
 # Version 2.5.0
 
 Changes for `createplugincompat` script:
