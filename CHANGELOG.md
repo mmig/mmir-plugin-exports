@@ -1,4 +1,16 @@
 
+# Version 2.5.0
+
+Changes for `createplugincompat` script:
+  * FEATURE support compatibility module creation for `mmir-lib` v7.x and `mmir-plugin-encoder-core` v1.x
+  * FEATURE added `type` `"none"` and field `template` for specifying custom template files when creating compatibility modules (see README.md)
+  * FEATURE support for additional optional field `async` (for types other than `media`; `media` already is wrapped in async-require)
+  * FEATURE support for additional optional field `dependencyMapping` for replacing dependencies (in plugin's `define` statement)
+  * FEATURE support for additional optional field `additionalDependencies` for specifying additional dependencies (in plugin's `define` statement)
+
+Changes for `dtsdownlevel` script:
+  * BUGFIX fixed emitted package.json entry: donwleveling for <3.9 (instead of <3.8)
+
 # Version 2.4.0
 
 Changes for `updateversion` script:
