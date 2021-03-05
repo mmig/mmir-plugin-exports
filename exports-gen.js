@@ -15,8 +15,8 @@ const MODULES_FIELD_NAME = 'modules';
  */
 var _joinTemplate = function _join(source, target, dict){
   source.forEach(function(item){
-    if(!dict[item]){
-      dict[item] = true;
+    if(!dict || !dict[item]){
+      dict && (dict[item] = true);
       target.push(item);
     }
   });
@@ -128,7 +128,7 @@ var _getBuildConfigTemplate = function _getBuildConfig(pluginName, buildConfigsM
     var depExports = require(dep + '/module-ids.gen.js');
     if(depExports.buildConfig){
       var depBuildConfigs = depExports.getBuildConfig(null, dupl);
-      _join(depBuildConfigs, buildConfigs, dupl);
+      _join(depBuildConfigs, buildConfigs);
     }
   });
 
