@@ -24,5 +24,5 @@ trim_trailing_whitespace = false
 indent_style = space
 
 [{package*,typedoc}.json]
-insert_final_newline = false
+insert_final_newline = unset
 indent_style = space
