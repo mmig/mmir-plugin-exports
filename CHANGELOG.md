@@ -1,4 +1,10 @@
 
+# Version 2.5.2
+
+Changes for `pluginexport` script:
+ * BUGFIX for _getBuildConfigTemplate(): must not use duplicates-map when joining dependency build-configs (since retrieving did already exclude duplicates & did update the dependency map)
+ * MODIFICATION (interal) for _joinTemplate(): changed to more common merge signature `_join(source, target)` -> `_join(target, source)`
+
 # Version 2.5.1
 
 Changes for `createplugincompat` script:
