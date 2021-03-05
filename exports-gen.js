@@ -8,12 +8,12 @@ const MODULES_FIELD_NAME = 'modules';
 
 /**
  * HELPER adds all entries from source to target, if it is not already contained
- * @param       {Array} source the source list
  * @param       {Array} target the target list
+ * @param       {Array} source the source list
  * @param       {Object} dict a map holding all enries that are already contained
  *                           in target (will be updated when entries are added to target)
  */
-var _joinTemplate = function _join(source, target, dict){
+var _joinTemplate = function _join(target, source, dict){
   source.forEach(function(item){
     if(!dict || !dict[item]){
       dict && (dict[item] = true);
@@ -60,9 +60,9 @@ var _getAllTemplate = function _getAll(type, mode, isResolve){
   if(isArray){
     dupl = {};
     if(mod && mod[type]){
-      _join(this.modes[mode][type], result, dupl);
+      _join(result, this.modes[mode][type], dupl);
     }
-    _join(data, result, dupl);
+    _join(result, data, dupl);
   } else if(isResolve){
     var root = __dirname;
     Object.keys(result).forEach(function(field){
@@ -77,7 +77,7 @@ var _getAllTemplate = function _getAll(type, mode, isResolve){
     var depExports = require(dep + '/module-ids.gen.js');
     var depData = depExports.getAll(type, mode, isResolve);
     if(isArray){
-      _join(depData, result, dupl);
+      _join(result, depData, dupl);
     } else {
       Object.assign(result, depData)
     }
@@ -104,7 +104,7 @@ var _getBuildConfigTemplate = function _getBuildConfig(pluginName, buildConfigsM
     var buildConfigMod = require(__dirname+'/'+_buildConfig);
     var buildConfig = buildConfigMod.buildConfigs;
     if(Array.isArray(buildConfig)){
-      _join(buildConfig, buildConfigs, dupl);
+      _join(buildConfigs, buildConfig, dupl);
     } else if(buildConfig && !dupl[buildConfig]){
       dupl[buildConfig] = true;
       buildConfigs.push(buildConfig);
@@ -114,7 +114,7 @@ var _getBuildConfigTemplate = function _getBuildConfig(pluginName, buildConfigsM
         if(!pluginName || pluginName === name){
           var pluginBuildConfig = buildConfigMod.plugins[name].buildConfigs;
           if(Array.isArray(pluginBuildConfig)){
-            _join(pluginBuildConfig, buildConfigs, dupl);
+            _join(buildConfigs, pluginBuildConfig, dupl);
           } else if(pluginBuildConfig && !dupl[pluginBuildConfig]){
             dupl[pluginBuildConfig] = true;
             buildConfigs.push(pluginBuildConfig);
@@ -128,7 +128,7 @@ var _getBuildConfigTemplate = function _getBuildConfig(pluginName, buildConfigsM
     var depExports = require(dep + '/module-ids.gen.js');
     if(depExports.buildConfig){
       var depBuildConfigs = depExports.getBuildConfig(null, dupl);
-      _join(depBuildConfigs, buildConfigs);
+      _join(buildConfigs, depBuildConfigs);
     }
   });
 
