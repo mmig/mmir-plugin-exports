@@ -1,4 +1,9 @@
 
+# Version 2.5.3
+
+Changes for `pluginexport` script:
+ * BUGFIX use `Set` for duplicate processing instead of plain object in order to avoid conflation due to keys getting converted to strings in plain objects
+
 # Version 2.5.2
 
 Changes for `pluginexport` script:
