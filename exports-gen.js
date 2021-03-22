@@ -10,13 +10,13 @@ const MODULES_FIELD_NAME = 'modules';
  * HELPER adds all entries from source to target, if it is not already contained
  * @param       {Array} target the target list
  * @param       {Array} source the source list
- * @param       {Object} dict a map holding all enries that are already contained
+ * @param       {Set} dupl a set holding all enries that are already contained
  *                           in target (will be updated when entries are added to target)
  */
-var _joinTemplate = function _join(target, source, dict){
+var _joinTemplate = function _join(target, source, dupl){
   source.forEach(function(item){
-    if(!dict || !dict[item]){
-      dict && (dict[item] = true);
+    if(!dupl || !dupl.has(item)){
+      dupl && dupl.add(item);
       target.push(item);
     }
   });
@@ -24,16 +24,18 @@ var _joinTemplate = function _join(target, source, dict){
 
 /**
  * HELPER for converting a list into a set / "duplicate dictionary"
- * @param       {Array} list a list that should be converted to a set / "duplicate dictionary"
- * @returns     {Object} a dictionary (map) holding with enries (keys) from the list
+ * @param       {Array|Object|Set} list a list or object that should be converted to a set / "duplicate dictionary" (for Object: convert its keys to duplicate entries)
+ * @returns     {Set} a set holding with enries (keys) from the list
  *
  */
 var _toDictTemplate = function _toDict(list){
-  var dict = {};
-  list.forEach(function(item){
-    dict[item] = true;
-  });
-  return dict;
+  if(typeof list.has === 'function' && typeof list.add === 'function'){
+    return list;
+  }
+  if(typeof list[Symbol.iterator] !== 'function'){
+    list = Object.keys(list);
+  }
+  return new Set(list);
 };
 
 /**
@@ -55,10 +57,10 @@ var _getAllTemplate = function _getAll(type, mode, isResolve){
   var data = this[type];
   var isArray = Array.isArray(data);
   var result = isArray? [] : Object.assign({}, data);
-  var dupl = result;
+  var dupl;
   var mod = mode && this.modes[mode];
   if(isArray){
-    dupl = {};
+    dupl = new Set();
     if(mod && mod[type]){
       _join(result, this.modes[mode][type], dupl);
     }
@@ -90,7 +92,7 @@ var _getAllTemplate = function _getAll(type, mode, isResolve){
  * HELPER returns list of (mmir) build configurations (to be merged into the main mmir build configuration)
  *
  * @param       {String} [pluginName] OPTIONAL if specified and multiple plugin-definitions are specified, only the build-configs for the specified plugin are include (note: filter does not apply recursively to dependencies)
- * @param       {Object} [buildConfigsMap] OPTIONAL a map for already included buildConfigs: {[buildConfig: BuildConfig]: Boolean}
+ * @param       {Object|Array|Set} [buildConfigsMap] OPTIONAL a map for already included buildConfigs: {[buildConfig: BuildConfig]: Boolean}
  * @return      {Array<BuildConfig>} a list of (mmir) build configurations; may be empty
  */
 var _getBuildConfigTemplate = function _getBuildConfig(pluginName, buildConfigsMap){
@@ -99,14 +101,14 @@ var _getBuildConfigTemplate = function _getBuildConfig(pluginName, buildConfigsM
     pluginName = void(0);
   }
   var buildConfigs = [];
-  var dupl = Array.isArray(buildConfigsMap)? _toDict(buildConfigsMap) : buildConfigsMap || {};
+  var dupl = buildConfigsMap? _toDict(buildConfigsMap) : new Set();
   if(_buildConfig){
     var buildConfigMod = require(__dirname+'/'+_buildConfig);
     var buildConfig = buildConfigMod.buildConfigs;
     if(Array.isArray(buildConfig)){
       _join(buildConfigs, buildConfig, dupl);
-    } else if(buildConfig && !dupl[buildConfig]){
-      dupl[buildConfig] = true;
+    } else if(buildConfig && !dupl.has(buildConfig)){
+      dupl.add(buildConfig);
       buildConfigs.push(buildConfig);
     }
     if(Array.isArray(buildConfigMod.pluginName) && buildConfigMod.plugins){
@@ -115,8 +117,8 @@ var _getBuildConfigTemplate = function _getBuildConfig(pluginName, buildConfigsM
           var pluginBuildConfig = buildConfigMod.plugins[name].buildConfigs;
           if(Array.isArray(pluginBuildConfig)){
             _join(buildConfigs, pluginBuildConfig, dupl);
-          } else if(pluginBuildConfig && !dupl[pluginBuildConfig]){
-            dupl[pluginBuildConfig] = true;
+          } else if(pluginBuildConfig && !dupl.has(pluginBuildConfig)){
+            dupl.add(pluginBuildConfig);
             buildConfigs.push(pluginBuildConfig);
           }
         }
