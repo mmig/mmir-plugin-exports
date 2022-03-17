@@ -118,7 +118,7 @@ try {
   var pkgOutDir = path.relative(pkgPath, absOut).replace(/\\/g, '/');
   console.log('\n  for backwards compatibility add entry to package.json:');
   console.log('  "typesVersions": {\n\
-    "<3.9": {\n\
+    "<4.5": {\n\
       "'+relDir+'/*": [\n\
         "'+pkgOutDir+'/*"\n\
       ]\n\
