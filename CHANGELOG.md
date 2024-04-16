@@ -1,4 +1,20 @@
 
+# Version 2.7.0
+
+Changes for `updateversion` script:
+ * FEATURE: support updating additional version-field in `package-lock.json`, present since `lockfileVersion` `2`
+   * `parsers`: process & return additional path-information for found positions
+   * `json`-parser: support specifying target-fields by field-path (via string-array)
+ * BUGFIX for error-message in case of wrong package.json path: correctly concatenate string and metadata in error-message
+
+Changes for `dtsdownlevel` script:
+  * FEATURE support donwleveling for typescript <4.7 (instead of <4.5)
+
+# Version 2.6.0
+
+Changes for `dtsdownlevel` script:
+  * FEATURE support donwleveling for typescript <4.5 (instead of <3.9)
+
 # Version 2.5.3
 
 Changes for `pluginexport` script:
@@ -34,7 +50,7 @@ Changes for `dtsdownlevel` script:
 Changes for `updateversion` script:
  * FEATURE: support (multi-)option `--regexp-target <file>` for multiple regular-expression target files in option
             (options `--version-regexp` and `--replace-pattern` can also take multiple values)
-  * BUGFIX for regexp parser: correctly calculate match length (before was missing last matched character)
+ * BUGFIX for regexp parser: correctly calculate match length (before was missing last matched character)
 
 Changes for XML modifier util:
  * FEATURE: support finding positions for TAGs in XML files (before only combination of TAG and ATTRIBUTE was supported)  
