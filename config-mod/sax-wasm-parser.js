@@ -11,6 +11,10 @@ const saxPath = require.resolve('sax-wasm/lib/sax-wasm.wasm');
 var saxWasmBuffer;
 
 function doPrepareWasm(parser, callback){
+
+  // NOTE: do reset event-handler by invoking without params
+  parser.eventHandler();
+
   parser.prepareWasm(saxWasmBuffer).then(function(ready){
     callback(ready? null : 'not ready');
   }).catch(function(err){
@@ -94,10 +98,11 @@ function toPos(position, offset){
   };
 }
 
-function createAttrPos(tagName, attrData){
+function createAttrPos(tagName, attrData, path){
   return {
     tagName: tagName,
     attrName: attrData.name.value,
+    path: path.join('.') + '[' + attrData.name.value + ']',
     nameStart: toPos(attrData.name.start),
     nameEnd: toPos(attrData.name.end),
     attrValue: attrData.value.value,
@@ -106,9 +111,10 @@ function createAttrPos(tagName, attrData){
   };
 }
 
-function createTagPos(tagName, tagData){
+function createTagPos(tagName, tagData, path){
   return {
     tagName: tagName,
+    path: path.join('.'),
     tagStart: toPos(tagData.openStart),
     tagEnd: toPos(tagData.closeEnd),
     tagValues: !tagData.textNodes? [] : tagData.textNodes.map(function(t){ return t.value; }),
@@ -117,16 +123,38 @@ function createTagPos(tagName, tagData){
   };
 }
 
+/**
+ * NOTE the `sax-wasm` event-handler should be called once without parameters,
+ *      before starting to parse, in order to reset the inner state, see e.g.
+ *      implementation of `doPrepareWasm(..)`
+ */
 function createAttrPosFinderFunc(tagName, attrName, positionList){
+  var path = [];
   return function(event, data) {
     var verbose = process.env.verbose;
     // console.log('sax event ',event,' -> ', data)
+
+    if(!event && !data){
+      // if called without parameters: do reset path-variable and return
+      if(verbose) console.log('sax event RESET');
+      path.splice(0);
+      return; ///////////////////// EARLY EXIT ///////////////////
+    }
+
+    if(event === SaxEventType.OpenTag) {
+      path.push(data.name)
+    } else if(event === SaxEventType.CloseTag) {
+      path.pop();
+    }
+
     if(!tagName){
 
       if (event === SaxEventType.Attribute) {
         // process attribute
         if(verbose) console.log('sax event Attribute (',event,') -> '+data.name.value+'='+JSON.stringify(data.value.value)+' at [', data.name.start, ',', data.name.end, '] <- [', data.value.start, ',', data.value.end, ']', data)
-        positionList.push(createAttrPos(null, data));
+        if(attrName === data.name.value) {
+          positionList.push(createAttrPos(null, data, path));
+        }
       }
 
     } else {
@@ -139,7 +167,7 @@ function createAttrPosFinderFunc(tagName, attrName, positionList){
           data.attributes.forEach(function(attrData) {
             if(verbose) console.log('    attribute '+attrData.name.value+'='+JSON.stringify(attrData.value.value)+' at [', attrData.name.start, ',', attrData.name.end, '] <- [', attrData.value.start, ',', attrData.value.end, ']', attrData)
             if(!attrName || attrName === attrData.name.value){
-              positionList.push(createAttrPos(tname, attrData))
+              positionList.push(createAttrPos(tname, attrData, path))
             }
           });
         } else if(verbose){
@@ -159,7 +187,7 @@ function createAttrPosFinderFunc(tagName, attrName, positionList){
             if(verbose) console.log('    IGNORED attribute '+attrData.name.value+'='+JSON.stringify(attrData.value.value)+' at [', attrData.name.start, ',', attrData.name.end, '] <- [', attrData.value.start, ',', attrData.value.end, ']')
           });
 
-          positionList.push(createTagPos(tname, data));
+          positionList.push(createTagPos(tname, data, path));
         }
 
       } else if(verbose) {

@@ -64,6 +64,7 @@ function createAttrPos(_tagName, attrData){
   return {
     tagName: _tagName,
     attrName: attrData.name,
+    path: attrData.parentPath? attrData.parentPath + '.' + attrData.name : attrData.name,
     nameStart: toPos(attrData.pos[0], 1, true),//NOTE position includes quotes
     nameEnd: toPos(attrData.pos[0], -1, false),//NOTE position includes quotes
     attrValue: attrData.value,
@@ -78,7 +79,27 @@ function createAttrPosFinderFunc(_tagName, attrName, positionList, options){
   }
   const breadthFirst = options && options.breadthFirst;
   const onlyFirst = options && options.onlyFirst;
-  function traverse(elem, res, _this){
+
+  const isAttrPath = Array.isArray(attrName);
+  const attrPath = isAttrPath? attrName.join('.') : attrName;
+  const isMatch = isAttrPath? function(fieldName, parentPath) {
+      return attrPath === getAttrPath(fieldName, parentPath);
+    } : function(fieldName, _parentPath) {
+      return attrPath === fieldName;
+    };
+  function getAttrPath(fieldName, parentPath) {
+    return parentPath? parentPath + '.' + fieldName : fieldName || '';
+  }
+  function shouldTraverse(fieldPath) {
+    // if attName was a full attribute path: no need to traverse further, if current field path is not part of the target path:
+    return isAttrPath? attrPath && attrPath.indexOf(fieldPath) === 0 : true;
+  }
+
+  if(process.env.verbose) console.log('  preparing to parse for attr:', attrName, '->', attrPath);
+
+  function traverse(elem, res, ppath, _this){
+
+    if(process.env.verbose) console.log('  checking JSON path:', JSON.stringify(ppath), '...');
 
     if(elem && typeof elem === 'object'){
 
@@ -86,35 +107,46 @@ function createAttrPosFinderFunc(_tagName, attrName, positionList, options){
 
       if(Array.isArray(elem)){
 
-        var item;
+        var item, ipath = getAttrPath(''+i, ppath);
         for(var i=0, size=elem.length; i < size; ++i){
           item = elem[i];
-          if(!traverse(item, res, _this)){
+          if(!shouldTraverse(ipath) || !traverse(item, res, ipath, _this)){
             return false;//<- indicate abort
           }
         }
 
       } else {
 
-        var children = breadthFirst? [] : null, names = Object.keys(elem), fieldName, val, posList;
+        var children = breadthFirst? [] : null, names = Object.keys(elem), fieldName, val, posList, fieldPath;
         for(var i=0, size=names.length; i < size; ++i){
           fieldName = names[i];
           if(fieldName === _this._options.posField){//ignore pos-field itself
             continue;
           }
           val = elem[fieldName];
-          if(fieldName === attrName){
+          if(process.env.verbose) console.log('    processing field ', JSON.stringify(getAttrPath(fieldName, ppath)))
+          if(isMatch(fieldName, ppath)){
             posList = elem[_this._options.posField]['_'+fieldName];
             if(process.env.verbose) console.log('    attribute '+fieldName+'='+JSON.stringify(val)+' at [', posList[0], '] <- [', posList[1], ']')
-            res.push(createAttrPos(null, {name: fieldName, value: val, pos: posList}));
+            res.push(createAttrPos(null, {name: fieldName, value: val, pos: posList, parentPath: ppath}));
 
             //if only first occurance should be process, abort after submitting first match to the result list
-            if(onlyFirst){
+            if(onlyFirst || isAttrPath){
               return false;//<- indicate abort
             }
           }
+
+          fieldPath = getAttrPath(fieldName, ppath);
+          if(!shouldTraverse(fieldPath)){
+            continue;
+          }
+
           //store children for visiting later? (i.e. breadth-first visition)
-          breadthFirst? children.push(val) : traverse(val, res, _this);
+          if(breadthFirst) {
+            children.push({name: fieldName, value: val});
+          } else if(!traverse(val, res, fieldPath, _this)){
+            return false;//<- indicate abort
+          }
         }
         // use breadth-first traversing, i.e. visit chlidren after level has been visitied:
         if(breadthFirst) {
@@ -122,8 +154,8 @@ function createAttrPosFinderFunc(_tagName, attrName, positionList, options){
 
           var ch;
           for(var j=0, len=children.length; j < len; ++j){
-            ch = children[j]
-            if(!traverse(ch, res, _this)){
+            ch = children[j];
+            if(!traverse(ch.value, res, getAttrPath(ch.name, ppath), _this)){
               return false;//<- indicate abort
             }
           }
@@ -133,7 +165,7 @@ function createAttrPosFinderFunc(_tagName, attrName, positionList, options){
     return true;//<- indicate continue
   }
   return function(jsonData) {
-    return traverse(jsonData, positionList, this)
+    return traverse(jsonData, positionList, '', this);
   };
 }
 

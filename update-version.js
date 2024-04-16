@@ -422,13 +422,43 @@ function getFromJson(dirOrFile, cb, ignoreUnexpectedLocation){
   }
 
 
-  var attr = 'version';
+  var attr = ['version'];
   modUtil.getPositions(jsonFilePath, null, attr, function(err, posResult){
-    cb(err, _posToRes(err, posResult, 'package', jsonFilePath, 'json'));
+
+    if(!isLockFile){
+
+      cb(err, _posToRes(err, posResult, 'package', jsonFilePath, 'json'));
+
+    } else {
+
+      // since lockfile v2: do update version-field in {packages..version}
+      var attr = ['packages', '', 'version'];
+      modUtil.getPositions(posResult.content, null, attr, function(err2, posResult2){
+
+        if(posResult2.positions.length > 0){
+          posResult.positions = posResult.positions.concat(posResult2.positions);
+        }
+
+        if(err && err2){
+          err.stack = 'Error 1:\n' + err.stack + '\nError 2:\n' + err2.stack;
+          err2 = err;
+        } else {
+          err2 = err2 || err;
+        }
+
+        cb(err2, _posToRes(err2, posResult, 'package', jsonFilePath, 'json'));
+
+      }, {
+        parser: modUtil.getParserFor('json'),
+        breadthFirst: false,
+        // onlyFirst: true
+      });
+    }
+
   }, {
     parser: modUtil.getParserFor('json'),
     breadthFirst: true,
-    onlyFirst: true
+    // onlyFirst: true
   });
 
   return pkgInfo.package;

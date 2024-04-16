@@ -1,9 +1,12 @@
-
-// DISABLED:
-// requires a modified version of saxes that can include position information for attributes
-//
-// for enabling:
-// install git+https://github.com/mmig/saxes#feature_attributePosition
+/*
+ * DISABLED:
+ * requires a modified version of saxes that can include position information for attributes
+ *
+ * for enabling:
+ * install git+https://github.com/mmig/saxes#feature_attributePosition
+ *
+ * @deprecated use `sax-wasm` parser instead (the `saxes` parser is only supported with special support for position information, see note above)
+ */
 
 var saxes = require("saxes");
 
@@ -68,10 +71,11 @@ function toPos(position, offset){
   };
 }
 
-function createAttrPos(tagName, attrData){
+function createAttrPos(tagName, attrData, path){
   return {
     tagName: tagName,
     attrName: attrData.name,
+    path: path.join(),
     nameStart: toPos(attrData.namePosition.start),
     nameEnd: toPos(attrData.namePosition.end, -1),
     attrValue: attrData.value,
@@ -81,15 +85,17 @@ function createAttrPos(tagName, attrData){
 }
 
 function createAttrPosFinderFunc(tagName, attrName, positionList){
+  var path = [];
   return {
     'opentag': function(data){
       const tname = data.name;
       if(process.env.verbose) console.log('sax event OpenTag -> ', tname, data)
+      path.push(tname);
       if(!tagName || tagName === tname){
         Object.values(data.attributes).forEach(function(attrData) {
           if(process.env.verbose) console.log('    attribute '+attrData.name+'='+JSON.stringify(attrData.value)+' at ', attrData.valuePosition)
           if(!attrName || attrName === attrData.name){
-            positionList.push(createAttrPos(tname, attrData))
+            positionList.push(createAttrPos(tname, attrData, path))
           }
         });
       } else if(process.env.verbose){
@@ -97,6 +103,15 @@ function createAttrPosFinderFunc(tagName, attrName, positionList){
           if(process.env.verbose) console.log('    IGNORED non-matching tag attribute '+attrData.name+'='+JSON.stringify(attrData.value)+' at ', attrData.valuePosition)
         });
       }
+    },
+    'closetag': function(data){
+      const tname = data.name;
+      if(process.env.verbose) console.log('sax event CloseTag -> ', tname, data);
+      path.pop();
+    },
+    'end': function(){
+      if(process.env.verbose) console.log('sax event End!');
+      path.splice(0);
     }
   };
 }
