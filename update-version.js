@@ -411,7 +411,7 @@ function getFromJson(dirOrFile, cb, ignoreUnexpectedLocation){
   var pkgInfo = packageUtils.getPackageInfo(dirPath);
   var jsonFilePath = pkgInfo.path;
   if(!ignoreUnexpectedLocation && path.normalize(path.dirname(jsonFilePath)) != path.resolve(dirPath)){
-    return cb(new Error('Did not find package.json at expected location: ', dirPath, ', instead found package.json at ', jsonFilePath));
+    return cb(new Error('Did not find package.json at expected location at:\n  ' + dirPath + '\n  instead found package.json at\n  ' + jsonFilePath));
   }
 
   if(isLockFile){
