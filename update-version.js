@@ -143,11 +143,7 @@ function updateVersion(target, opts, cb){
       return cb(new Error('No version found in file  '+ (entry? entry.path : '<NA>')));
     }
 
-    // console.log('loaded config files', configInfos.map(function(c){//DEBUG
-    //   var c2 = Object.assign({},c)
-    //   c2.content = null;
-    //   return c2
-    // }));
+    // console.log('loaded config files', configInfos.map(modUtil._toDebugResult))//DEBUG
 
     configInfos = configInfos.filter(function(info){
       if(
@@ -162,11 +158,7 @@ function updateVersion(target, opts, cb){
       return true;
     });
 
-    // console.log('writing version '+ver+' to ', configInfos.map(function(c){//DEBUG
-    //   var c2 = Object.assign({},c)
-    //   c2.content = null;
-    //   return c2
-    // }));
+    // console.log('writing version '+ver+' to ', configInfos.map(modUtil._toDebugResult))//DEBUG
 
     var tasks = [], written = [], unchanged = [];
     configInfos.forEach(function(info, i){

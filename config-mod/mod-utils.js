@@ -286,6 +286,12 @@ function findOffset(str, line, column){
   return reLine.lastIndex + column;
 }
 
+function toDebugResult(result){
+  const copy = Object.assign({}, result) || {};
+  copy.content = copy.content && typeof copy.content.length === 'number'? '<string.length='+copy.content.length+'>' : copy.content;
+  return copy;
+}
+
 module.exports = {
   replaceAttrValue: replaceAttrValue,
   getPositions: getPositions,
@@ -299,5 +305,6 @@ module.exports = {
     return parserType || defaultParserType;
   },
   getOffset: getOffset,
-  findOffset: findOffset
+  findOffset: findOffset,
+  _toDebugResult: toDebugResult,
 }
