@@ -1,4 +1,10 @@
 
+# Version 2.7.1
+
+Changes for `updateversion` script:
+ * BUGFIX for processing package-lock.json version 2 or later: do actually process all found positions (not only first one)
+
+
 # Version 2.7.0
 
 Changes for `updateversion` script:
