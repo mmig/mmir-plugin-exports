@@ -189,7 +189,7 @@ function updateVersion(target, opts, cb){
 
       }, {
         parser: modUtil.getParserFor(info.ext),
-        onlyFirst: info.regexp? void(0) : true,// if regexp: let regexp "decide" if only first should be replaced (i.e. if global modifier is specified)
+        onlyFirst: info.regexp? void(0) : typeof info.onlyFirst !== 'undefined'? info.onlyFirst : true,// if regexp: let regexp "decide" if only first should be replaced (i.e. if global modifier is specified)
 
         //for regexp: if a replace-pattern was specified, then the regexp and replace-pattern must be supplied in the options:
         regexp: info.regexp && info.replacePattern? info.regexp : void(0),
@@ -379,7 +379,8 @@ function _posToRes(error, posResult, type, filePath, fileExt, regExp, regExpPatt
     ext: fileExt,
     lock: /-lock\.json$/.test(path.basename(filePath)),
     regexp: regExp || false,
-    replacePattern: regExpPattern || false
+    replacePattern: regExpPattern || false,
+    onlyFirst: posResult.onlyFirst,
   };
 }
 
@@ -427,8 +428,12 @@ function getFromJson(dirOrFile, cb, ignoreUnexpectedLocation){
       var attr = ['packages', '', 'version'];
       modUtil.getPositions(posResult.content, null, attr, function(err2, posResult2){
 
-        if(posResult2.positions.length > 0){
-          posResult.positions = posResult.positions.concat(posResult2.positions);
+        if(!err2 && posResult2.positions.length > 0){
+          if(err){
+            posResult = posResult2;
+          } else {
+            posResult.positions = posResult.positions.concat(posResult2.positions);
+          }
         }
 
         if(err && err2){
@@ -438,6 +443,10 @@ function getFromJson(dirOrFile, cb, ignoreUnexpectedLocation){
           err2 = err2 || err;
         }
 
+        // since search was for specic paths, there will be at most 2 results
+        //       and if there are 2 results, then both should be replaced
+        // -> set onlyFirst to FALSE
+        posResult.onlyFirst = false;
         cb(err2, _posToRes(err2, posResult, 'package', jsonFilePath, 'json'));
 
       }, {
